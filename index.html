@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>⚔ STATS — Guild</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+// ══════════════════════════════════════════════════════
+//  FIREBASE CONFIG
+// ══════════════════════════════════════════════════════
+const app = firebase.initializeApp({
+  apiKey:            "AIzaSyAh-jOqVUWuBwbAhwUbG0qUvLigSF33hSM",
+  authDomain:        "stats-bdb2a.firebaseapp.com",
+  databaseURL:       "https://stats-bdb2a-default-rtdb.firebaseio.com",
+  projectId:         "stats-bdb2a",
+  storageBucket:     "stats-bdb2a.firebasestorage.app",
+  messagingSenderId: "586286769691",
+  appId:             "1:586286769691:web:b556c1b45b27b53e64fabe"
+});
+const AUTH = firebase.auth();
+const DB   = firebase.database();
+</script>
+<style>
+:root{
+  --bg:#0a0a0c;--bg2:#111116;--bg3:#181820;--panel:#1c1c26;
+  --b1:rgba(255,255,255,.06);--b2:rgba(255,255,255,.12);
+  --acc:#c9a84c;--acc2:#f0c96a;--glow:rgba(201,168,76,.2);
+  --red:#e05555;--red2:#ff9090;--grn:#4ecb8a;--grn2:#6fffb0;--blu:#4e8fff;
+  --tx:#e8e4d8;--tx2:#7a7570;--tx3:#3a3830;
+  --fh:'Rajdhani',sans-serif;--fm:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fm);background:var(--bg);color:var(--tx);min-height:100vh}
+
+/* ── WALLS ── */
+.wall{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px}
+.wall.hidden{display:none}
+.auth-card{background:var(--panel);border:1px solid var(--b2);border-radius:16px;padding:36px 28px;width:300px;text-align:center;position:relative;overflow:hidden}
+.auth-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--acc),var(--acc2),transparent)}
+.auth-logo{font-family:var(--fh);font-size:32px;font-weight:700;letter-spacing:.1em;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.auth-sub{font-size:10px;color:var(--tx3);letter-spacing:.15em;text-transform:uppercase;margin-bottom:24px}
+.g-btn{width:100%;padding:11px;border-radius:8px;border:1px solid var(--b2);background:var(--bg2);color:var(--tx);font-family:var(--fh);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s}
+.g-btn:hover{border-color:var(--acc);color:var(--acc)}
+.g-btn:disabled{opacity:.4;cursor:default}
+.auth-err{font-size:10px;color:var(--red2);margin-top:8px;min-height:14px}
+.spinner{width:32px;height:32px;border:3px solid var(--b2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
+.load-txt{font-size:12px;color:var(--tx2);font-family:var(--fh);letter-spacing:.05em}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── NAV ── */
+.nav{position:sticky;top:0;z-index:200;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--b2);display:flex;align-items:stretch;gap:0}
+.nav-brand{padding:8px 14px;border-right:1px solid var(--b1);display:flex;align-items:center;flex-shrink:0}
+.logo{font-family:var(--fh);font-size:18px;font-weight:700;letter-spacing:.1em;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo-sub{font-size:9px;color:var(--tx3);letter-spacing:.15em;text-transform:uppercase}
+.nav-tabs{display:flex;align-items:stretch}
+.nav-tab{padding:0 16px;cursor:pointer;font-family:var(--fh);font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--tx2);border:none;background:none;border-bottom:2px solid transparent;transition:all .18s;white-space:nowrap;display:flex;align-items:center}
+.nav-tab:hover{color:var(--tx)}
+.nav-tab.active{color:var(--acc);border-bottom-color:var(--acc)}
+.nav-right{display:flex;align-items:center;gap:6px;padding:5px 10px;margin-left:auto}
+.gs-chip{flex-shrink:0;background:var(--panel);border:1px solid var(--b1);border-radius:6px;padding:3px 10px;min-width:80px;text-align:center;cursor:pointer;transition:border-color .18s}
+.gs-chip:hover{border-color:var(--acc)}
+.gs-chip-name{font-size:9px;color:var(--tx2);letter-spacing:.06em;text-transform:uppercase}
+.gs-chip-val{font-family:var(--fh);font-size:15px;font-weight:700;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.gs-chip-rank{font-size:9px;color:var(--tx3)}
+.user-chip{display:flex;align-items:center;gap:6px;padding:3px 10px 3px 4px;border-radius:20px;border:1px solid var(--b2);background:var(--panel);cursor:pointer;transition:border-color .18s;flex-shrink:0}
+.user-chip:hover{border-color:var(--acc)}
+.user-chip img{width:24px;height:24px;border-radius:50%;object-fit:cover}
+.user-chip-name{font-family:var(--fh);font-size:11px;font-weight:600;color:var(--tx);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-chip-room{font-size:9px;color:var(--acc);white-space:nowrap}
+.sdot{width:8px;height:8px;border-radius:50%;background:var(--tx3);display:inline-block;vertical-align:middle;flex-shrink:0;transition:all .3s}
+.sdot.ok{background:var(--grn);box-shadow:0 0 5px rgba(78,203,138,.5)}
+.sdot.go{background:#f0c96a;animation:sdot-blink .5s infinite}
+.sdot.er{background:var(--red)}
+@keyframes sdot-blink{0%,100%{opacity:1}50%{opacity:.15}}
+
+/* ── CTRL BAR ── */
+.ctrl{position:sticky;top:48px;z-index:199;background:color-mix(in srgb,var(--bg2) 94%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--b1);padding:6px 14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.ctrl-label{font-size:10px;color:var(--tx3);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+select,input.search-inp{font-family:var(--fm);font-size:12px;color:var(--tx);background:var(--panel);border:1px solid var(--b2);border-radius:5px;padding:4px 8px;outline:none}
+select:focus,input.search-inp:focus{border-color:var(--acc)}
+select option{background:var(--bg2)}
+input.search-inp{width:150px}
+.sep{width:1px;height:14px;background:var(--b2);flex-shrink:0}
+.btn{font-family:var(--fh);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:4px 12px;border-radius:5px;cursor:pointer;border:1px solid var(--b2);background:var(--panel);color:var(--tx);transition:all .18s;white-space:nowrap}
+.btn:hover{border-color:var(--acc);color:var(--acc)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn-primary{border-color:color-mix(in srgb,var(--acc) 50%,transparent);color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,transparent)}
+.btn-primary:hover{background:color-mix(in srgb,var(--acc) 18%,transparent)}
+.btn-danger{border-color:rgba(224,85,85,.5);color:var(--red2);background:rgba(224,85,85,.1)}
+.btn-danger:hover{background:rgba(224,85,85,.22);color:#fff}
+.btn-cloud{border-color:rgba(78,203,138,.4);color:var(--tx2)}
+.btn-cloud.connected{color:var(--grn)}
+.chk{font-size:11px;color:var(--tx2);display:flex;align-items:center;gap:4px;cursor:pointer;user-select:none;white-space:nowrap}
+.chk input{accent-color:var(--acc)}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto;padding-bottom:40px}
+table{border-collapse:collapse;width:max-content;min-width:100%}
+thead th{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 98%,transparent);border-bottom:1px solid var(--b2);border-right:1px solid var(--b1);padding:8px 10px;font-family:var(--fh);font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--tx2);white-space:nowrap}
+thead th:first-child{position:sticky;left:0;z-index:20;background:color-mix(in srgb,var(--bg) 99%,transparent);min-width:180px;text-align:left;color:var(--tx)}
+thead th:nth-child(2){position:sticky;left:180px;z-index:20;background:color-mix(in srgb,var(--bg) 99%,transparent);min-width:60px}
+.th-player{min-width:110px;text-align:center}
+.th-player-name{cursor:pointer;color:var(--tx)}
+.th-player-name:hover{color:var(--acc)}
+.th-del{display:inline-block;margin-left:4px;font-size:9px;color:var(--tx3);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid transparent;transition:all .15s}
+.th-del:hover{color:var(--red2);border-color:var(--red);background:rgba(224,85,85,.12)}
+.th-gs{font-size:10px;color:var(--acc);font-family:var(--fm);cursor:pointer;margin-top:1px}
+.th-gs:hover{color:var(--acc2)}
+td{padding:4px 10px;border-bottom:1px solid var(--b1);border-right:1px solid rgba(255,255,255,.02);font-size:12px;white-space:nowrap}
+tbody tr:hover td{background:rgba(255,255,255,.022)!important}
+td.sn{position:sticky;left:0;z-index:5;background:var(--bg);border-right:1px solid var(--b2);width:180px;min-width:180px}
+td.sc{position:sticky;left:180px;z-index:5;background:var(--bg);border-right:1px solid var(--b2);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+.cat-dmg{color:#d4834a}.cat-def{color:#4e8fff}.cat-other{color:var(--tx3)}
+td.vc{text-align:right;font-variant-numeric:tabular-nums;position:relative;cursor:default}
+td.vc:hover{background:color-mix(in srgb,var(--acc) 5%,var(--bg))!important}
+td.best{color:var(--grn2);font-weight:500}
+td.worst{color:rgba(224,85,85,.4)}
+td.win{background:color-mix(in srgb,var(--grn) 8%,transparent)!important;color:var(--grn)}
+td.lose{background:color-mix(in srgb,var(--red) 8%,transparent)!important;color:var(--red2)}
+td.tie{color:var(--tx2)}
+.pct{display:block;font-size:9px;color:var(--tx3);line-height:1.2}
+.bar{height:3px;margin-top:2px;border-radius:1px;background:var(--acc);opacity:.4}
+tr.cat-row td{background:rgba(201,168,76,.08)!important;border-bottom:1px solid rgba(201,168,76,.2);font-family:var(--fh);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(201,168,76,.8);padding:5px 12px;position:sticky;left:0;z-index:4;cursor:pointer;user-select:none}
+tr.cat-row.collapsed td::after{content:' ▸'}
+tr.cat-row:not(.collapsed) td::after{content:' ▾';opacity:.5}
+.star{font-size:12px;cursor:pointer;color:var(--tx3);transition:all .18s;display:inline-block;line-height:1;margin-right:4px}
+.star:hover{color:var(--acc);transform:scale(1.25)}
+.star.pinned{color:var(--acc)}
+tr.pinned-row{background:color-mix(in srgb,var(--acc) 5%,transparent)!important}
+tr.pinned-row td.sn{border-left:2px solid var(--acc)}
+.null-val{color:var(--tx3)}
+.cell-edit{position:absolute;inset:1px;width:calc(100% - 2px);font-family:var(--fm);font-size:12px;color:var(--tx);background:var(--panel);border:1px solid var(--acc);border-radius:3px;text-align:right;padding:0 5px;outline:none;box-shadow:0 0 0 2px var(--glow);z-index:30}
+
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:linear-gradient(150deg,color-mix(in srgb,var(--bg2) 90%,var(--acc) 5%),var(--bg2));border:1px solid var(--b2);border-radius:12px;padding:20px;width:420px;max-width:96vw;max-height:88vh;overflow-y:auto;position:relative;animation:modal-in .15s ease}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--acc) 40%,var(--acc2) 60%,transparent)}
+@keyframes modal-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.modal-title{font-family:var(--fh);font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);margin-bottom:14px}
+.modal-field{margin-bottom:8px}
+.modal-field label{display:block;font-size:10px;color:var(--tx3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px}
+.modal-field input,.modal-field select{width:100%;padding:6px 9px;font-family:var(--fm);font-size:12px;background:var(--bg);color:var(--tx);border:1px solid var(--b2);border-radius:5px;outline:none}
+.modal-field input:focus,.modal-field select:focus{border-color:var(--acc)}
+.modal-hint{font-size:11px;color:var(--tx2);margin:4px 0 10px;line-height:1.5}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px}
+.modal-footer{display:flex;gap:7px;margin-top:14px;justify-content:flex-end}
+.btn-cancel{color:var(--tx2)}
+.btn-cancel:hover{color:var(--tx);border-color:var(--tx2)}
+.modal-tabs{display:flex;border-bottom:1px solid var(--b2);margin-bottom:12px;gap:0}
+.modal-tab{padding:5px 12px;font-size:11px;cursor:pointer;font-family:var(--fh);font-weight:600;color:var(--tx2);border:none;background:none;border-bottom:2px solid transparent;transition:all .15s}
+.modal-tab.active{color:var(--acc);border-bottom-color:var(--acc)}
+.room-id-box{background:var(--bg);border:1px solid var(--b2);border-radius:6px;padding:8px 10px;font-family:var(--fm);font-size:11px;color:var(--acc);word-break:break-all;cursor:pointer;user-select:all;transition:border-color .15s;margin-bottom:4px}
+.room-id-box:hover{border-color:var(--acc)}
+.sync-log{max-height:110px;overflow-y:auto;background:var(--bg);border-radius:5px;padding:5px 8px;font-family:var(--fm);font-size:10px;color:var(--tx2);line-height:1.9}
+.sync-log-row{border-bottom:1px solid rgba(255,255,255,.03)}
+.section-label{font-size:10px;color:var(--tx3);letter-spacing:.1em;text-transform:uppercase;margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--b1)}
+.success-box{padding:8px;border-radius:6px;background:color-mix(in srgb,var(--grn) 10%,var(--panel));border:1px solid color-mix(in srgb,var(--grn) 30%,transparent);font-size:11px;color:var(--grn2);line-height:1.9;word-break:break-all;margin-bottom:8px}
+.av-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.av-btn{font-size:18px;cursor:pointer;padding:3px 5px;border-radius:5px;border:1px solid transparent;transition:all .14s}
+.av-btn:hover,.av-btn.sel{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,transparent)}
+
+/* ── PODIUM ── */
+.podium-wrap{padding:14px 14px 10px;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.podium{display:flex;align-items:flex-end;gap:6px}
+.pod{display:flex;flex-direction:column;align-items:center;gap:4px}
+.pod-emoji{font-size:44px;line-height:1;transition:transform .2s}
+.pod:hover .pod-emoji{transform:scale(1.08) translateY(-3px)}
+.pod-name{font-family:var(--fh);font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;cursor:pointer}
+.pod-gs{font-size:10px;color:var(--tx2);font-family:var(--fm)}
+.pod-block{border-radius:6px 6px 0 0;width:80px;display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-size:22px;font-weight:700;border:1px solid var(--b2);border-bottom:none;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 10%,var(--panel)),var(--panel))}
+.pod1 .pod-block{height:62px;border-color:var(--acc)}.pod2 .pod-block{height:44px}.pod3 .pod-block{height:30px}
+.pod-rest{display:flex;flex-direction:column;gap:3px;justify-content:flex-end;padding-bottom:2px}
+.pr{display:flex;align-items:center;gap:6px;padding:3px 9px;border-radius:5px;background:var(--panel);border:1px solid var(--b1)}
+.pr-rank{font-size:10px;color:var(--tx3);width:12px;text-align:right}
+.pr-name{font-size:11px;font-family:var(--fh);font-weight:600;color:var(--tx)}
+.pr-gs{font-size:10px;color:var(--acc);font-family:var(--fm)}
+
+/* ── PAGE SECTIONS ── */
+.page{display:none}
+.page.active{display:block}
+.settings-wrap{max-width:860px;margin:0 auto;padding:24px 20px 60px}
+.s-section{margin-bottom:32px}
+.s-title{font-family:var(--fh);font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);margin-bottom:14px;padding-bottom:6px;border-bottom:1px solid var(--b2)}
+.io-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.io-card{background:var(--panel);border:1px solid var(--b2);border-radius:8px;padding:14px}
+.io-card-title{font-family:var(--fh);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--acc);margin-bottom:6px}
+.io-card-desc{font-size:11px;color:var(--tx2);margin-bottom:10px;line-height:1.5}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--acc) 35%,transparent);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:var(--acc)}
+</style>
+</head>
+<body>
+
+<!-- ══ AUTH WALL ══ -->
+<div class="wall" id="auth-wall">
+  <div class="auth-card">
+    <div class="auth-logo">⚔ STATS</div>
+    <div class="auth-sub">Guild Gear Score</div>
+    <button class="g-btn" id="sign-in-btn" onclick="signIn()">
+      <svg width="18" height="18" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.8 2.5 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.8 6C12.4 13.2 17.8 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17z"/>
+        <path fill="#FBBC05" d="M10.5 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.8-6A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l7.9-6.1z"/>
+        <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.2 0-11.5-4.2-13.4-9.9l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/>
+      </svg>
+      Войти через Google
+    </button>
+    <div class="auth-err" id="auth-err"></div>
+  </div>
+</div>
+
+<!-- ══ LOAD WALL ══ -->
+<div class="wall hidden" id="load-wall">
+  <div class="spinner"></div>
+  <div class="load-txt" id="load-txt">Загрузка...</div>
+</div>
+
+<!-- ══ CLOUD MODAL ══ -->
+<div class="overlay" id="cloud-modal">
+  <div class="modal" style="width:480px">
+    <div class="modal-title" style="display:flex;align-items:center;gap:8px">
+      ☁ Облако гильдии
+      <span class="sdot" id="cloud-sdot-m"></span>
+      <span style="font-size:10px;color:var(--tx2);font-family:var(--fm)" id="cloud-status-txt"></span>
+    </div>
+    <div class="modal-tabs">
+      <button class="modal-tab active" id="ctab-0" onclick="cloudTab(0)">🏰 Комната</button>
+      <button class="modal-tab"        id="ctab-1" onclick="cloudTab(1)">＋ Создать</button>
+      <button class="modal-tab"        id="ctab-2" onclick="cloudTab(2)">🔑 Войти</button>
+      <button class="modal-tab"        id="ctab-3" onclick="cloudTab(3)">📋 Лог</button>
+    </div>
+
+    <!-- Tab 0: current room -->
+    <div id="cpanel-0">
+      <div id="room-info-box" style="padding:10px;border-radius:7px;border:1px solid var(--b2);background:var(--bg2);font-size:12px;color:var(--tx3);margin-bottom:10px">Не подключено к комнате</div>
+      <div style="display:flex;gap:6px;margin-bottom:12px">
+        <button class="btn btn-primary" id="btn-push" style="flex:1" onclick="cloudPush()" disabled>⬆ Сохранить</button>
+        <button class="btn" id="btn-pull" style="flex:1" onclick="cloudPull()" disabled>⬇ Обновить</button>
+        <button class="btn" id="btn-leave" onclick="leaveRoom()" style="color:var(--red2)" disabled>✕ Выйти</button>
+      </div>
+      <div class="section-label">Онлайн в комнате</div>
+      <div id="online-list" style="font-size:11px;color:var(--tx2);margin-bottom:12px">—</div>
+      <div class="section-label">Аккаунт</div>
+      <div id="user-info" style="font-size:11px;color:var(--tx2);margin-bottom:8px"></div>
+      <button class="btn btn-danger" onclick="signOut()">🚪 Выйти из аккаунта</button>
+    </div>
+
+    <!-- Tab 1: create -->
+    <div id="cpanel-1" style="display:none">
+      <div class="section-label">Новая комната гильдии</div>
+      <div class="modal-field"><label>Название гильдии</label><input id="cr-name" placeholder="Например: MyGuild" maxlength="24"></div>
+      <div class="modal-field"><label>Пароль (необязательно)</label><input id="cr-pass" type="password" placeholder="Пусто = открытая комната"></div>
+      <div id="cr-success" class="success-box" style="display:none"></div>
+      <div class="modal-footer"><button class="btn btn-primary" onclick="createRoom()">🏰 Создать комнату</button></div>
+    </div>
+
+    <!-- Tab 2: join -->
+    <div id="cpanel-2" style="display:none">
+      <div class="section-label">Войти в комнату гильдии</div>
+      <div class="modal-field"><label>ID комнаты</label><input id="jr-id" placeholder="Вставь ID от гильдмастера"></div>
+      <div class="modal-field"><label>Пароль (если есть)</label><input id="jr-pass" type="password" placeholder="Пароль комнаты"></div>
+      <div class="modal-footer"><button class="btn btn-primary" onclick="joinRoom()">🔑 Войти</button></div>
+    </div>
+
+    <!-- Tab 3: log -->
+    <div id="cpanel-3" style="display:none">
+      <div class="section-label">Лог синхронизации</div>
+      <div class="sync-log" id="sync-log-el"><div style="color:var(--tx3)">Пусто</div></div>
+      <div style="margin-top:8px"><button class="btn" onclick="syncLog=[];renderSyncLog()">Очистить</button></div>
+    </div>
+
+    <div class="modal-footer"><button class="btn btn-cancel" onclick="closeModal('cloud-modal')">Закрыть</button></div>
+  </div>
+</div>
+
+<!-- ══ ADD PLAYER ══ -->
+<div class="overlay" id="add-player-modal">
+  <div class="modal" style="width:460px">
+    <div class="modal-title">✦ Новый игрок</div>
+    <div class="modal-field"><label>Никнейм</label><input id="new-player-name" placeholder="Имя игрока"></div>
+    <div class="modal-field">
+      <label>Аватар</label>
+      <div class="av-grid" id="av-grid"></div>
+      <input type="hidden" id="new-player-av" value="⚔">
+    </div>
+    <div class="modal-hint">Ключевые статы (остальные можно оставить пустыми):</div>
+    <div class="modal-grid" id="new-player-fields"></div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeModal('add-player-modal')">Отмена</button>
+      <button class="btn btn-primary" onclick="saveNewPlayer()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DELETE CONFIRM ══ -->
+<div class="overlay" id="delete-modal">
+  <div class="modal" style="max-width:300px;text-align:center">
+    <div class="modal-title">⚠ Удалить</div>
+    <div style="font-size:13px;color:var(--tx2);margin:4px 0 14px" id="delete-modal-txt"></div>
+    <div class="modal-footer" style="justify-content:center">
+      <button class="btn btn-cancel" onclick="closeModal('delete-modal')">Отмена</button>
+      <button class="btn btn-danger" id="delete-confirm-btn">Удалить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ NAV ══ -->
+<div class="nav">
+  <div class="nav-brand">
+    <div><div class="logo">⚔ STATS</div><div class="logo-sub">Gear Score</div></div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-page="table" onclick="showPage('table',this)">📊 Таблица</button>
+    <button class="nav-tab" data-page="settings" onclick="showPage('settings',this)">⚙ Настройки</button>
+  </div>
+  <div class="nav-right" id="nav-right">
+    <!-- gs chips + user chip inserted by JS -->
+  </div>
+</div>
+
+<!-- ══ TABLE PAGE ══ -->
+<div class="page active" id="page-table">
+  <div class="ctrl">
+    <span class="ctrl-label">Тип</span>
+    <select id="filter-cat" onchange="renderTable()">
+      <option value="">Все</option>
+      <option value="Урон">Урон</option>
+      <option value="Защита">Защита</option>
+      <option value="Прочее">Прочее</option>
+    </select>
+    <input class="search-inp" id="filter-q" placeholder="🔍 Поиск стата..." oninput="renderTable()">
+    <div class="sep"></div>
+    <span class="ctrl-label">Сравнить</span>
+    <select id="cmp-a" style="border-color:rgba(78,203,138,.5)" onchange="renderTable()"></select>
+    <span style="font-size:11px;color:var(--tx3)">vs</span>
+    <select id="cmp-b" style="border-color:rgba(78,143,255,.5)" onchange="renderTable()"></select>
+    <div class="sep"></div>
+    <label class="chk"><input type="checkbox" id="chk-diff" onchange="renderTable()"> Разница</label>
+    <label class="chk"><input type="checkbox" id="chk-bars" onchange="renderTable()" checked> Полосы</label>
+    <label class="chk"><input type="checkbox" id="chk-pct" onchange="renderTable()"> % топа</label>
+    <div style="flex:1"></div>
+    <button class="btn btn-cloud" id="cloud-btn" onclick="openCloudModal()">☁ <span class="sdot" id="cloud-sdot-nav" style="margin:0 2px"></span> <span id="cloud-nav-txt">Облако</span></button>
+    <button class="btn btn-primary" onclick="openAddPlayer()">＋ Игрок</button>
+  </div>
+
+  <div class="podium-wrap">
+    <div class="podium" id="podium-el"></div>
+    <div class="pod-rest" id="pod-rest-el"></div>
+  </div>
+
+  <div style="font-size:10px;color:var(--tx3);padding:2px 14px 6px;font-style:italic">
+    ✎ Двойной клик по числу — редактировать · Клик по ГС в шапке — сортировка · Клик по категории — свернуть
+  </div>
+
+  <div class="tbl-wrap"><table id="main-table"></table></div>
+</div>
+
+<!-- ══ SETTINGS PAGE ══ -->
+<div class="page" id="page-settings">
+  <div class="settings-wrap">
+    <div class="s-section">
+      <div class="s-title">☁ Облако и синхронизация</div>
+      <div class="io-grid">
+        <div class="io-card">
+          <div class="io-card-title">Статус подключения</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <span class="sdot" id="cloud-sdot-settings"></span>
+            <span style="font-size:12px;color:var(--tx)" id="cloud-status-settings">Не подключено</span>
+          </div>
+          <div style="font-size:11px;color:var(--tx2);margin-bottom:10px">Комната: <span id="room-name-settings" style="color:var(--acc)">—</span></div>
+          <button class="btn btn-cloud" onclick="openCloudModal()">☁ Управление комнатой</button>
+        </div>
+        <div class="io-card">
+          <div class="io-card-title">Ручная синхронизация</div>
+          <div class="io-card-desc">Данные автоматически синхронизируются при каждом изменении</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn btn-primary" onclick="cloudPush()">⬆ Сохранить в облако</button>
+            <button class="btn" onclick="cloudPull()">⬇ Загрузить из облака</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  BASE DATA (default stats — overwritten by Firebase)
+// ══════════════════════════════════════════════════════
+const RAW_STATS = [
+  {cat:"Урон",stat:"Маг урон"},{cat:"Урон",stat:"Маг точность"},{cat:"Урон",stat:"Маг Крит Атк"},
+  {cat:"Урон",stat:"Урон от оружия"},{cat:"Урон",stat:"Доп. урон"},{cat:"Урон",stat:"Доп. Уронкрит атк."},
+  {cat:"Урон",stat:"Шанс двойного урона"},{cat:"Урон",stat:"Шанс тройного урона"},
+  {cat:"Защита",stat:"Блокировка оружия"},{cat:"Урон",stat:"Скор. Атк"},
+  {cat:"",stat:"Скорость"},{cat:"",stat:"Скор. Маг"},
+  {cat:"Защита",stat:"Снижения урона ближ."},{cat:"Защита",stat:"Снижения урона дальн."},
+  {cat:"Защита",stat:"Снижения маг урона"},{cat:"Защита",stat:"Защита"},
+  {cat:"Защита",stat:"Уклонение ближн."},{cat:"Защита",stat:"Уклонение дальн."},
+  {cat:"Защита",stat:"Маг. Уклонение"},{cat:"Защита",stat:"Сопротивление умениям"},
+  {cat:"",stat:"Макс НР"},{cat:"",stat:"Макс МР"},
+  {cat:"",stat:"Восст. НР"},{cat:"",stat:"Восст. МР"},{cat:"",stat:"Уменьш. расхода МР"},
+  {cat:"Урон",stat:"Уменьш. перезарядки"},{cat:"",stat:"Грузоподъёмность"},
+  {cat:"Урон",stat:"Урон ближн."},{cat:"Урон",stat:"Точность ближн."},{cat:"Урон",stat:"Крит ближн."},
+  {cat:"Урон",stat:"Урон дальн."},{cat:"Урон",stat:"Точность дальн."},{cat:"Урон",stat:"Крит дальн."},
+  {cat:"Урон",stat:"Увел. урона от оружия"},{cat:"Защита",stat:"Сопр. урону от оружия"},
+  {cat:"Урон",stat:"Увел. урона от умений"},{cat:"Защита",stat:"Сопр. урону от умений"},
+  {cat:"Защита",stat:"Снижение крит атк"},{cat:"Защита",stat:"Сопр крит атк ближн"},
+  {cat:"Защита",stat:"Сопр крит атк дальн"},{cat:"Защита",stat:"Сопр маг крит атк"},
+  {cat:"Защита",stat:"Сопр двойному урону"},{cat:"Защита",stat:"Сопр тройному урону"},
+  {cat:"Урон",stat:"Пробивание блока"},{cat:"Урон",stat:"Игнор. снижения урона"},
+  {cat:"Урон",stat:"Шанс оглушения"},{cat:"Защита",stat:"Сопр. оглушению"},
+  {cat:"Урон",stat:"Шанс удержания"},{cat:"Защита",stat:"Сопр. удержанию"},
+  {cat:"Урон",stat:"Урон PVP ближн"},{cat:"Урон",stat:"Урон PVP дальн"},
+  {cat:"Урон",stat:"Маг урон PVP"},{cat:"Урон",stat:"Крит атк PVP"},
+  {cat:"Защита",stat:"Уклонение PVP"},{cat:"Защита",stat:"Сниж урона PVP ближн"},
+  {cat:"Защита",stat:"Сниж маг урона PVP"},
+  {cat:"Урон",stat:"Доп урон PVE"},{cat:"Защита",stat:"Защита в PVE"},
+  {cat:"Урон",stat:"Урон водой"},{cat:"Урон",stat:"Урон огнем"},
+  {cat:"Урон",stat:"Урон ветром"},{cat:"Урон",stat:"Урон землей"},
+  {cat:"Урон",stat:"Урон святостью"},{cat:"Урон",stat:"Урон тьмой"},
+  {cat:"Защита",stat:"Сопр. воде"},{cat:"Защита",stat:"Сопр. огню"},
+  {cat:"Защита",stat:"Сопр. ветру"},{cat:"Защита",stat:"Сопр. земле"},
+  {cat:"Защита",stat:"Сопр. святости"},{cat:"Защита",stat:"Сопр. тьме"},
+  {cat:"Урон",stat:"Увел урона (душа)"},{cat:"Урон",stat:"Увел урона (душа вк)"},
+  {cat:"",stat:"Накопл. энергии"},{cat:"",stat:"Расход энергии"},
+  {cat:"",stat:"Бонус к опыту"},{cat:"",stat:"Эфективность лечения"},
+  {cat:"",stat:"Шанс аномалий"},{cat:"",stat:"Сопр. аномалиям"}
+];
+
+const DEFAULT_VALS = {
+  "Мои":    {"Маг урон":394,"Маг точность":465,"Маг Крит Атк":187,"Урон от оружия":40,"Доп. урон":13,"Доп. Уронкрит атк.":140,"Шанс двойного урона":184,"Шанс тройного урона":59,"Блокировка оружия":168,"Скор. Атк":264,"Скорость":87,"Скор. Маг":127,"Снижения урона ближ.":277,"Снижения урона дальн.":285,"Снижения маг урона":278,"Защита":484,"Уклонение ближн.":86,"Уклонение дальн.":88,"Маг. Уклонение":86,"Сопротивление умениям":548,"Макс НР":54812,"Макс МР":13018,"Восст. НР":96,"Восст. МР":127,"Уменьш. расхода МР":17,"Уменьш. перезарядки":48,"Грузоподъёмность":20255,"Урон ближн.":429,"Точность ближн.":508,"Крит ближн.":217,"Урон дальн.":396,"Точность дальн.":466,"Крит дальн.":189,"Увел. урона от оружия":326,"Сопр. урону от оружия":261,"Увел. урона от умений":354,"Сопр. урону от умений":199,"Снижение крит атк":61,"Сопр крит атк ближн":134,"Сопр крит атк дальн":133,"Сопр маг крит атк":154,"Сопр двойному урону":118,"Сопр тройному урону":32,"Пробивание блока":133,"Игнор. снижения урона":129,"Шанс оглушения":135,"Сопр. оглушению":166,"Шанс удержания":58,"Сопр. удержанию":104,"Урон PVP ближн":99,"Урон PVP дальн":99,"Маг урон PVP":100,"Крит атк PVP":18,"Уклонение PVP":74,"Сниж урона PVP ближн":61,"Сниж маг урона PVP":61,"Доп урон PVE":82,"Защита в PVE":50,"Урон водой":5,"Урон огнем":10,"Урон ветром":8,"Урон землей":14,"Урон святостью":17,"Урон тьмой":9,"Сопр. воде":47,"Сопр. огню":47,"Сопр. ветру":47,"Сопр. земле":47,"Сопр. святости":48,"Сопр. тьме":28,"Увел урона (душа)":35,"Увел урона (душа вк)":41,"Накопл. энергии":517,"Расход энергии":77,"Бонус к опыту":102.3,"Эфективность лечения":137,"Шанс аномалий":204,"Сопр. аномалиям":81},
+  "Morozko":{"Маг урон":428,"Маг точность":506,"Маг Крит Атк":203,"Урон от оружия":40,"Доп. урон":13,"Доп. Уронкрит атк.":142,"Шанс двойного урона":195,"Шанс тройного урона":69,"Блокировка оружия":198,"Скор. Атк":267.8,"Скорость":92,"Скор. Маг":127,"Снижения урона ближ.":334,"Снижения урона дальн.":338,"Снижения маг урона":333,"Защита":515,"Уклонение ближн.":77,"Уклонение дальн.":93,"Маг. Уклонение":78,"Сопротивление умениям":563,"Макс НР":61899,"Макс МР":14937,"Восст. НР":99,"Восст. МР":133,"Уменьш. расхода МР":15,"Уменьш. перезарядки":48,"Грузоподъёмность":21850,"Урон ближн.":464,"Точность ближн.":549,"Крит ближн.":231,"Урон дальн.":430,"Точность дальн.":508,"Крит дальн.":204,"Увел. урона от оружия":370,"Сопр. урону от оружия":287,"Увел. урона от умений":381,"Сопр. урону от умений":256,"Снижение крит атк":90,"Сопр крит атк ближн":155,"Сопр крит атк дальн":152,"Сопр маг крит атк":173,"Сопр двойному урону":148,"Сопр тройному урону":36,"Пробивание блока":167,"Игнор. снижения урона":142,"Шанс оглушения":142,"Сопр. оглушению":208,"Шанс удержания":66,"Сопр. удержанию":105,"Урон PVP ближн":121,"Урон PVP дальн":120,"Маг урон PVP":120,"Крит атк PVP":21,"Уклонение PVP":79,"Сниж урона PVP ближн":72,"Сниж маг урона PVP":72,"Доп урон PVE":83,"Защита в PVE":56,"Урон водой":5,"Урон огнем":10,"Урон ветром":8,"Урон землей":14,"Урон святостью":17,"Урон тьмой":10,"Сопр. воде":47,"Сопр. огню":47,"Сопр. ветру":47,"Сопр. земле":47,"Сопр. святости":48,"Сопр. тьме":28,"Увел урона (душа)":50,"Увел урона (душа вк)":59,"Накопл. энергии":553,"Расход энергии":87,"Бонус к опыту":118,"Эфективность лечения":150,"Шанс аномалий":218,"Сопр. аномалиям":99},
+  "Деми":   {"Маг урон":507,"Маг точность":587,"Маг Крит Атк":249,"Урон от оружия":30,"Доп. урон":13,"Доп. Уронкрит атк.":164,"Шанс двойного урона":203,"Шанс тройного урона":78,"Блокировка оружия":245,"Скор. Атк":280.6,"Скорость":57,"Скор. Маг":197,"Снижения урона ближ.":360,"Снижения урона дальн.":356,"Снижения маг урона":357,"Защита":534,"Уклонение ближн.":87,"Уклонение дальн.":94,"Маг. Уклонение":92,"Сопротивление умениям":587,"Макс НР":83587,"Макс МР":18990,"Восст. НР":101,"Восст. МР":140,"Уменьш. расхода МР":22,"Уменьш. перезарядки":41,"Грузоподъёмность":23165,"Урон ближн.":477,"Точность ближн.":557,"Крит ближн.":196,"Урон дальн.":463,"Точность дальн.":545,"Крит дальн.":191,"Увел. урона от оружия":412,"Сопр. урону от оружия":335,"Увел. урона от умений":473,"Сопр. урону от умений":328,"Снижение крит атк":111,"Сопр крит атк ближн":199,"Сопр крит атк дальн":201,"Сопр маг крит атк":202,"Сопр двойному урону":184,"Сопр тройному урону":59,"Пробивание блока":175,"Игнор. снижения урона":169,"Шанс оглушения":169,"Сопр. оглушению":228,"Шанс удержания":91,"Сопр. удержанию":118,"Урон PVP ближн":139,"Урон PVP дальн":139,"Маг урон PVP":139,"Крит атк PVP":26,"Уклонение PVP":105,"Сниж урона PVP ближн":79,"Сниж маг урона PVP":79,"Доп урон PVE":70,"Защита в PVE":60,"Урон водой":10,"Урон огнем":14,"Урон ветром":8,"Урон землей":20,"Урон святостью":42,"Урон тьмой":14,"Сопр. воде":26,"Сопр. огню":26,"Сопр. ветру":26,"Сопр. земле":26,"Сопр. святости":37,"Сопр. тьме":17,"Увел урона (душа)":110,"Увел урона (душа вк)":170,"Накопл. энергии":667,"Расход энергии":75,"Бонус к опыту":93.3,"Эфективность лечения":190,"Шанс аномалий":235,"Сопр. аномалиям":99},
+  "Сем":    {"Маг урон":478,"Маг точность":588,"Маг Крит Атк":284,"Урон от оружия":39,"Доп. урон":11,"Доп. Уронкрит атк.":143,"Шанс двойного урона":175,"Шанс тройного урона":72,"Блокировка оружия":183,"Скор. Атк":293.6,"Скорость":87,"Скор. Маг":212,"Снижения урона ближ.":342,"Снижения урона дальн.":340,"Снижения маг урона":344,"Защита":507,"Уклонение ближн.":49,"Уклонение дальн.":88,"Маг. Уклонение":80,"Сопротивление умениям":549,"Макс НР":76087,"Макс МР":14784,"Восст. НР":93,"Восст. МР":144,"Уменьш. расхода МР":20,"Уменьш. перезарядки":51,"Грузоподъёмность":22415,"Урон ближн.":434,"Точность ближн.":542,"Крит ближн.":205,"Урон дальн.":432,"Точность дальн.":540,"Крит дальн.":204,"Увел. урона от оружия":355,"Сопр. урону от оружия":336,"Увел. урона от умений":464,"Сопр. урону от умений":266,"Снижение крит атк":80,"Сопр крит атк ближн":173,"Сопр крит атк дальн":175,"Сопр маг крит атк":175,"Сопр двойному урону":147,"Сопр тройному урону":58,"Пробивание блока":169,"Игнор. снижения урона":154,"Шанс оглушения":120,"Сопр. оглушению":176,"Шанс удержания":94,"Сопр. удержанию":81,"Урон PVP ближн":143,"Урон PVP дальн":142,"Маг урон PVP":143,"Крит атк PVP":24,"Уклонение PVP":87,"Сниж урона PVP ближн":69,"Сниж маг урона PVP":69,"Доп урон PVE":73,"Защита в PVE":50,"Урон водой":6,"Урон огнем":10,"Урон ветром":18,"Урон землей":10,"Урон святостью":19,"Урон тьмой":18,"Сопр. воде":36,"Сопр. огню":36,"Сопр. ветру":36,"Сопр. земле":36,"Сопр. святости":47,"Сопр. тьме":27,"Увел урона (душа)":106,"Увел урона (душа вк)":121,"Накопл. энергии":632,"Расход энергии":86,"Бонус к опыту":134.3,"Эфективность лечения":151,"Шанс аномалий":275,"Сопр. аномалиям":86},
+  "Батько": {"Маг урон":389,"Маг точность":510,"Маг Крит Атк":166,"Урон от оружия":42,"Доп. урон":19,"Доп. Уронкрит атк.":139,"Шанс двойного урона":163,"Шанс тройного урона":75,"Блокировка оружия":181,"Скор. Атк":317.4,"Скорость":117,"Скор. Маг":192,"Снижения урона ближ.":277,"Снижения урона дальн.":279,"Снижения маг урона":274,"Защита":466,"Уклонение ближн.":78,"Уклонение дальн.":90,"Маг. Уклонение":69,"Сопротивление умениям":452,"Макс НР":66354,"Макс МР":13034,"Восст. НР":104,"Восст. МР":132,"Уменьш. расхода МР":14,"Уменьш. перезарядки":41,"Грузоподъёмность":20935,"Урон ближн.":435,"Точность ближн.":552,"Крит ближн.":232},
+  "Дэми":   {"Маг урон":519,"Маг точность":589,"Маг Крит Атк":233,"Урон от оружия":42,"Доп. урон":14,"Доп. Уронкрит атк.":170,"Шанс двойного урона":260,"Шанс тройного урона":111,"Блокировка оружия":252,"Скор. Атк":282.6,"Скорость":107,"Скор. Маг":147,"Снижения урона ближ.":391,"Снижения урона дальн.":397,"Снижения маг урона":388,"Защита":558,"Уклонение ближн.":85,"Уклонение дальн.":97,"Маг. Уклонение":91,"Сопротивление умениям":631,"Макс НР":87205,"Макс МР":17983,"Восст. НР":106,"Восст. МР":142,"Уменьш. расхода МР":17,"Уменьш. перезарядки":51,"Грузоподъёмность":23765,"Урон ближн.":547,"Точность ближн.":625,"Крит ближн.":258,"Урон дальн.":510,"Точность дальн.":586,"Крит дальн.":230,"Увел. урона от оружия":432,"Сопр. урону от оружия":380,"Увел. урона от умений":491,"Сопр. урону от умений":328,"Снижение крит атк":110,"Сопр крит атк ближн":211,"Сопр крит атк дальн":215,"Сопр маг крит атк":238,"Сопр двойному урону":199,"Сопр тройному урону":69,"Пробивание блока":203,"Игнор. снижения урона":179,"Шанс оглушения":180,"Сопр. оглушению":245,"Шанс удержания":104,"Сопр. удержанию":129,"Урон PVP ближн":148,"Урон PVP дальн":148,"Маг урон PVP":148,"Крит атк PVP":25,"Уклонение PVP":115,"Сниж урона PVP ближн":88,"Сниж маг урона PVP":88,"Доп урон PVE":80,"Защита в PVE":67,"Урон водой":10,"Урон огнем":14,"Урон ветром":12,"Урон землей":20,"Урон святостью":40,"Урон тьмой":20,"Сопр. воде":36,"Сопр. огню":36,"Сопр. ветру":36,"Сопр. земле":36,"Сопр. святости":37,"Сопр. тьме":17,"Увел урона (душа)":110,"Увел урона (душа вк)":170,"Накопл. энергии":565,"Расход энергии":75,"Бонус к опыту":86.3,"Эфективность лечения":191,"Шанс аномалий":262,"Сопр. аномалиям":104}
+};
+
+const GW_DEFAULT = {"Маг урон":2,"Маг точность":1.5,"Маг Крит Атк":1.8,"Урон ближн.":2,"Точность ближн.":1.5,"Крит ближн.":1.8,"Урон дальн.":2,"Точность дальн.":1.5,"Крит дальн.":1.8,"Увел. урона от оружия":1.6,"Увел. урона от умений":1.6,"Шанс двойного урона":1.4,"Шанс тройного урона":2,"Пробивание блока":1.3,"Игнор. снижения урона":1.3,"Урон PVP ближн":1.2,"Маг урон PVP":1.2,"Защита":2,"Снижения урона ближ.":1.8,"Снижения урона дальн.":1.6,"Снижения маг урона":1.6,"Сопротивление умениям":1.5,"Блокировка оружия":1.2,"Сопр крит атк ближн":1.3,"Сопр маг крит атк":1.2,"Сопр. оглушению":1.1,"Сопр двойному урону":1.1,"Сопр тройному урону":1.3,"Сниж урона PVP ближн":1.1,"Сниж маг урона PVP":1.1,"Макс НР":0.015,"Макс МР":0.04,"Скор. Атк":0.8,"Скорость":0.5,"Сопр. удержанию":1,"Шанс удержания":1,"Шанс оглушения":1,"Эфективность лечения":0.8};
+
+const AVLIST = ["⚔","🛡","🧙","🏹","⚡","🔥","🌀","👊","🗡","🌟","🐉","💀","🦅","🌙"];
+const KEY_STATS = ["Маг урон","Маг точность","Маг Крит Атк","Урон ближн.","Точность ближн.","Крит ближн.","Урон дальн.","Точность дальн.","Защита","Снижения урона ближ.","Снижения маг урона","Блокировка оружия","Макс НР","Макс МР","Скор. Атк","Шанс двойного урона","Шанс тройного урона","Увел. урона от оружия","Увел. урона от умений"];
+
+// ══════════════════════════════════════════════════════
+//  APP STATE — единственный источник истины
+// ══════════════════════════════════════════════════════
+let state = {
+  players: Object.keys(DEFAULT_VALS),  // список игроков
+  vals: JSON.parse(JSON.stringify(DEFAULT_VALS)), // значения статов
+  avatars: {},  // эмодзи аватарки
+  names: {},    // отображаемые имена
+  gw: Object.assign({}, GW_DEFAULT),   // веса ГС
+  pinned: {},   // закреплённые статы
+  collapsed: {} // свёрнутые категории
+};
+state.players.forEach(p => { state.avatars[p] = '⚔'; state.names[p] = p; });
+
+// Firebase vars
+let fbUser = null;
+let fbRoom = null;  // { id, name, pass }
+let fbListener = null;
+let pushTimer = null;
+let syncLog = [];
+let sortCol = null, sortDir = 1;
+
+// ══ Firebase key encoding (. # $ / [ ] not allowed) ══
+const ENC = [['.','·'],['#','＃'],['$','＄'],['/','／'],['[','［'],[']','］']];
+function fkEnc(s){ let r=String(s); ENC.forEach(([a,b])=>r=r.split(a).join(b)); return r; }
+function fkDec(s){ let r=String(s); ENC.forEach(([a,b])=>r=r.split(b).join(a)); return r; }
+function encObj(o){
+  if(!o||typeof o!=='object'||Array.isArray(o)) return o;
+  const r={};
+  Object.keys(o).forEach(k=>{ r[fkEnc(k)] = (o[k]&&typeof o[k]==='object'&&!Array.isArray(o[k])) ? encObj(o[k]) : o[k]; });
+  return r;
+}
+function decObj(o){
+  if(!o||typeof o!=='object'||Array.isArray(o)) return o;
+  const r={};
+  Object.keys(o).forEach(k=>{ r[fkDec(k)] = (o[k]&&typeof o[k]==='object'&&!Array.isArray(o[k])) ? decObj(o[k]) : o[k]; });
+  return r;
+}
+
+// ══ Encode / Decode full state ══
+function encodeState(){
+  return {
+    v: 7,
+    ts: Date.now(),
+    uid: fbUser ? fbUser.uid : '',
+    by:  fbUser ? fbUser.displayName : '?',
+    players: state.players.map(fkEnc),
+    vals:    encObj(state.vals),
+    avatars: encObj(state.avatars),
+    names:   encObj(state.names),
+    gw:      encObj(state.gw),
+    pinned:  encObj(state.pinned)
+  };
+}
+function decodeState(d){
+  if(!d || !d.v) return;
+  state.players = (d.players||[]).map(fkDec);
+  state.vals    = decObj(d.vals||{});
+  state.avatars = decObj(d.avatars||{});
+  state.names   = decObj(d.names||{});
+  state.gw      = Object.assign({}, GW_DEFAULT, decObj(d.gw||{}));
+  state.pinned  = decObj(d.pinned||{});
+  // ensure avatars & names exist for all players
+  state.players.forEach(p=>{
+    if(!state.avatars[p]) state.avatars[p]='⚔';
+    if(!state.names[p])   state.names[p]=p;
+    if(!state.vals[p])    state.vals[p]={};
+  });
+}
+
+// ══ GS calculation ══
+function calcGS(p){
+  let s=0;
+  RAW_STATS.forEach(({stat})=>{
+    const v = state.vals[p] ? state.vals[p][stat] : null;
+    if(v!=null) s += v * (state.gw[stat]||0);
+  });
+  return Math.round(s);
+}
+
+// ══ Push to Firebase ══
+function cloudPush(){
+  if(!fbUser||!fbRoom) return;
+  setDot('go','Сохранение...');
+  DB.ref('rooms/'+fbRoom.id+'/data').set(encodeState())
+    .then(()=>{ setDot('ok','Сохранено'); addLog('⬆ Сохранено в облако'); updateSettingsStatus(); })
+    .catch(e=>{ setDot('er','Ошибка'); addLog('❌ push: '+e.message); });
+}
+
+// ══ Pull from Firebase ══
+function cloudPull(){
+  if(!fbUser||!fbRoom) return;
+  setDot('go','Загрузка...');
+  DB.ref('rooms/'+fbRoom.id+'/data').once('value').then(snap=>{
+    const d = snap.val();
+    if(d){ decodeState(d); renderAll(); addLog('⬇ Данные обновлены'); }
+    else addLog('⚠ В облаке нет данных');
+    setDot('ok','Подключено');
+  }).catch(e=>{ setDot('er','Ошибка'); addLog('❌ pull: '+e.message); });
+}
+
+// ══ Auto-push after change ══
+function schedulePush(){
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(cloudPush, 1000);
+}
+
+// ══ Start realtime listener ══
+function startListener(){
+  if(fbListener){ fbListener.off(); fbListener=null; }
+  if(!fbRoom) return;
+  fbListener = DB.ref('rooms/'+fbRoom.id+'/data');
+  fbListener.on('value', snap=>{
+    const d = snap.val();
+    if(!d || !fbUser || d.uid===fbUser.uid) return; // skip own pushes
+    addLog('🔄 Обновление от: '+(d.by||'?'));
+    decodeState(d);
+    renderAll();
+  });
+}
+
+// ══ Mark presence ══
+function markOnline(){
+  if(!fbUser||!fbRoom) return;
+  const ref = DB.ref('rooms/'+fbRoom.id+'/online/'+fbUser.uid);
+  ref.set({ name: fbUser.displayName, ts: Date.now() });
+  ref.onDisconnect().remove();
+}
+
+// ══ Create room ══
+function createRoom(){
+  if(!fbUser){ alert('Войди через Google'); return; }
+  const name = (document.getElementById('cr-name').value||'').trim();
+  const pass = (document.getElementById('cr-pass').value||'').trim();
+  if(!name){ alert('Введи название'); return; }
+  const id = name.toLowerCase().replace(/[^a-z0-9а-яё]/gi,'_').substring(0,16)
+             + '_' + Math.random().toString(36).substr(2,6);
+  setDot('go','Создание...');
+  DB.ref('rooms/'+id+'/meta').set({ name, pass, owner: fbUser.uid, created: Date.now() })
+    .then(()=>{
+      fbRoom = { id, name, pass };
+      sessionStorage.setItem('fbRoom', JSON.stringify(fbRoom));
+      markOnline(); startListener(); setDot('ok','Подключено');
+      const el = document.getElementById('cr-success');
+      el.style.display='';
+      el.innerHTML = '✅ Готово!<br><b>ID:</b> <span style="user-select:all;font-family:var(--fm)">'+id+'</span><br><small>Поделись ID с участниками гильдии</small>';
+      updateRoomBox(); updateChip(); updateSettingsStatus(); cloudTab(0); cloudPush();
+    }).catch(e=>{ setDot('er','Ошибка'); alert('Ошибка: '+e.message); });
+}
+
+// ══ Join room ══
+function joinRoom(){
+  if(!fbUser){ alert('Войди через Google'); return; }
+  const id   = (document.getElementById('jr-id').value||'').trim();
+  const pass = (document.getElementById('jr-pass').value||'').trim();
+  if(!id){ alert('Введи ID комнаты'); return; }
+  setDot('go','...'); showLoad('Подключение к комнате...');
+  DB.ref('rooms/'+id+'/meta').once('value')
+    .then(snap=>{
+      const m = snap.val();
+      if(!m){ hideLoad(); setDot('er',''); alert('Комната не найдена'); return null; }
+      if(m.pass && m.pass!==pass){ hideLoad(); setDot('er',''); alert('Неверный пароль'); return null; }
+      fbRoom = { id, name: m.name, pass };
+      sessionStorage.setItem('fbRoom', JSON.stringify(fbRoom));
+      markOnline(); startListener();
+      return DB.ref('rooms/'+id+'/data').once('value');
+    })
+    .then(snap=>{
+      if(!snap) return;
+      const d = snap.val();
+      if(d){ decodeState(d); renderAll(); addLog('🔑 Вошёл: '+fbRoom.name); }
+      setDot('ok','Подключено'); hideLoad();
+      updateRoomBox(); updateChip(); updateSettingsStatus(); closeModal('cloud-modal');
+    })
+    .catch(e=>{ hideLoad(); setDot('er','Ошибка'); addLog('❌ '+e.message); });
+}
+
+// ══ Leave room ══
+function leaveRoom(){
+  if(!confirm('Выйти из комнаты?')) return;
+  if(fbListener){ fbListener.off(); fbListener=null; }
+  if(fbUser&&fbRoom) DB.ref('rooms/'+fbRoom.id+'/online/'+fbUser.uid).remove();
+  fbRoom = null;
+  sessionStorage.removeItem('fbRoom');
+  setDot('','Не подключено'); updateRoomBox(); updateChip(); updateSettingsStatus();
+  addLog('⬅ Вышел из комнаты');
+}
+
+// ══ Restore session ══
+function restoreSession(){
+  try{
+    const d = JSON.parse(sessionStorage.getItem('fbRoom')||'null');
+    if(!d||!d.id){ hideLoad(); setDot('','Войди в комнату'); return; }
+    fbRoom = d; setDot('go','...'); showLoad('Загрузка данных из облака...');
+    DB.ref('rooms/'+d.id+'/meta').once('value')
+      .then(snap=>{
+        if(!snap.val()){
+          fbRoom=null; sessionStorage.removeItem('fbRoom');
+          hideLoad(); setDot('',''); return null;
+        }
+        markOnline(); startListener();
+        return DB.ref('rooms/'+d.id+'/data').once('value');
+      })
+      .then(snap=>{
+        if(!snap) return;
+        const data = snap.val();
+        if(data){ decodeState(data); renderAll(); addLog('✅ Загружено: '+fbRoom.name); }
+        setDot('ok','Подключено'); hideLoad(); updateRoomBox(); updateChip(); updateSettingsStatus();
+      })
+      .catch(e=>{ hideLoad(); setDot('er','Ошибка'); addLog('❌ '+e.message); });
+  } catch(e){ hideLoad(); }
+}
+
+// ══ Auth ══
+let authBusy = false;
+function signIn(){
+  if(authBusy) return; authBusy=true;
+  const btn = document.getElementById('sign-in-btn');
+  btn.disabled=true;
+  document.getElementById('auth-err').textContent='';
+  AUTH.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+    .catch(e=>{
+      authBusy=false; btn.disabled=false;
+      if(e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request') return;
+      document.getElementById('auth-err').textContent=e.message;
+    });
+}
+function signOut(){
+  if(!confirm('Выйти из аккаунта?')) return;
+  if(fbListener){ fbListener.off(); fbListener=null; }
+  AUTH.signOut();
+  fbRoom=null; sessionStorage.removeItem('fbRoom');
+}
+AUTH.onAuthStateChanged(user=>{
+  authBusy=false; fbUser=user;
+  const btn=document.getElementById('sign-in-btn'); if(btn) btn.disabled=false;
+  if(user){
+    document.getElementById('auth-wall').classList.add('hidden');
+    updateChip();
+    const ui=document.getElementById('user-info');
+    if(ui) ui.innerHTML=`<b style="color:var(--tx)">${user.displayName}</b><br><span style="color:var(--tx3)">${user.email}</span>`;
+    showLoad('Загрузка данных...'); restoreSession();
+  } else {
+    document.getElementById('auth-wall').classList.remove('hidden');
+    hideLoad(); if(fbListener){fbListener.off();fbListener=null;}
+    updateChip(); setDot('','');
+  }
+});
+
+// ══ UI helpers ══
+function showLoad(t){ document.getElementById('load-wall').classList.remove('hidden'); document.getElementById('load-txt').textContent=t||'Загрузка...'; }
+function hideLoad(){ document.getElementById('load-wall').classList.add('hidden'); }
+
+function setDot(cls,txt){
+  document.querySelectorAll('.sdot').forEach(d=>{ d.className='sdot'+(cls?' '+cls:''); });
+  const t=document.getElementById('cloud-status-txt'); if(t) t.textContent=txt||'';
+  const r=document.getElementById('chip-room-name'); if(r) r.textContent=fbRoom?fbRoom.name:'не подключено';
+  const nb=document.getElementById('cloud-nav-txt'); if(nb) nb.textContent=fbRoom?fbRoom.name:'Облако';
+  const cb=document.getElementById('cloud-btn');
+  if(cb){ cb.className='btn btn-cloud'+(cls==='ok'?' connected':''); }
+}
+
+function updateChip(){
+  const nr=document.getElementById('nav-right');
+  // clear old chip
+  const old=document.getElementById('user-chip-el'); if(old) old.remove();
+  // rebuild gs chips
+  nr.innerHTML='';
+  if(fbUser){
+    // user chip
+    const chip=document.createElement('div');
+    chip.id='user-chip-el'; chip.className='user-chip'; chip.onclick=openCloudModal;
+    chip.innerHTML=(fbUser.photoURL?`<img src="${fbUser.photoURL}" onerror="this.style.display='none'">`:'')
+      +`<div><div class="user-chip-name">${fbUser.displayName}</div>`
+      +`<div class="user-chip-room" id="chip-room-name">${fbRoom?fbRoom.name:'не подключено'}</div></div>`
+      +`<span class="sdot${fbRoom?' ok':''}"></span>`;
+    nr.appendChild(chip);
+  }
+}
+
+function openCloudModal(){
+  updateRoomBox(); showOnline(); cloudTab(0); openModal('cloud-modal');
+}
+function updateRoomBox(){
+  const box=document.getElementById('room-info-box'); if(!box) return;
+  const btns=['btn-push','btn-pull','btn-leave'];
+  if(fbRoom){
+    box.innerHTML=`<div style="font-family:var(--fh);font-size:14px;font-weight:700;color:var(--acc);margin-bottom:5px">🏰 ${fbRoom.name}</div>`
+      +`<div style="font-size:10px;color:var(--tx3);margin-bottom:3px">ID (нажми — скопируй — раздай гильдии):</div>`
+      +`<div class="room-id-box" onclick="copyRoomId()">${fbRoom.id}</div>`;
+    btns.forEach(id=>{ const b=document.getElementById(id); if(b) b.disabled=false; });
+  } else {
+    box.innerHTML=`<span style="color:var(--tx3)">Не подключено. Создай или войди в комнату.</span>`;
+    btns.forEach(id=>{ const b=document.getElementById(id); if(b) b.disabled=true; });
+  }
+}
+function copyRoomId(){
+  if(!fbRoom) return;
+  navigator.clipboard.writeText(fbRoom.id).then(()=>addLog('📋 ID скопирован'));
+}
+function showOnline(){
+  if(!fbRoom){ const el=document.getElementById('online-list'); if(el) el.textContent='—'; return; }
+  DB.ref('rooms/'+fbRoom.id+'/online').once('value').then(snap=>{
+    const names=Object.values(snap.val()||{}).map(u=>u.name||'?');
+    const el=document.getElementById('online-list');
+    if(el) el.textContent=names.length?names.join(', '):'Только ты';
+  });
+}
+function updateSettingsStatus(){
+  const ss=document.getElementById('cloud-status-settings');
+  const sn=document.getElementById('room-name-settings');
+  if(ss) ss.textContent=fbRoom?'Подключено':'Не подключено';
+  if(sn) sn.textContent=fbRoom?fbRoom.name:'—';
+}
+
+function cloudTab(n){
+  for(let i=0;i<4;i++){
+    const t=document.getElementById('ctab-'+i), p=document.getElementById('cpanel-'+i);
+    if(t) t.classList.toggle('active',i===n);
+    if(p) p.style.display=i===n?'block':'none';
+  }
+  if(n===0){ updateRoomBox(); showOnline(); }
+  if(n===3) renderSyncLog();
+}
+function addLog(m){ syncLog.unshift({t:new Date().toLocaleTimeString('ru'),m}); if(syncLog.length>60) syncLog.pop(); renderSyncLog(); }
+function renderSyncLog(){
+  const el=document.getElementById('sync-log-el'); if(!el) return;
+  el.innerHTML=syncLog.length
+    ? syncLog.map(l=>`<div class="sync-log-row"><span style="color:var(--tx3);margin-right:5px">${l.t}</span><span style="color:var(--acc)">${l.m}</span></div>`).join('')
+    : '<div style="color:var(--tx3)">Пусто</div>';
+}
+
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('open'); }));
+
+// ══ Page nav ══
+function showPage(name, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ══ Render all ══
+function renderAll(){
+  renderPodium(); renderGSBar(); renderSelects(); renderTable();
+}
+
+// ══ GS bar (nav right) ══
+function renderGSBar(){
+  // chips already rendered — just update values
+}
+
+// ══ Podium ══
+function renderPodium(){
+  const sorted = [...state.players].sort((a,b)=>calcGS(b)-calcGS(a));
+  const medals=['👑','🥈','🥉'], heights=[62,44,30];
+  const order=[1,0,2].filter(i=>i<sorted.length);
+  document.getElementById('podium-el').innerHTML = order.map(i=>{
+    const p=sorted[i], g=calcGS(p).toLocaleString('ru');
+    return `<div class="pod pod${i+1}">
+      <div class="pod-emoji">${medals[i]}</div>
+      <div class="pod-name">${state.avatars[p]} ${state.names[p]}</div>
+      <div class="pod-gs">${g} ГС</div>
+      <div class="pod-block" style="height:${heights[i]}px">${i+1}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('pod-rest-el').innerHTML = sorted.slice(3).map((p,i)=>
+    `<div class="pr"><span class="pr-rank">${i+4}</span><span class="pr-name">${state.avatars[p]} ${state.names[p]}</span><span class="pr-gs">${calcGS(p).toLocaleString('ru')} ГС</span></div>`
+  ).join('');
+}
+
+// ══ Selects ══
+function renderSelects(){
+  ['cmp-a','cmp-b'].forEach((id,i)=>{
+    const s=document.getElementById(id); if(!s) return;
+    const cur=s.value;
+    s.innerHTML=state.players.map(p=>`<option value="${p}">${state.names[p]||p}</option>`).join('');
+    s.value=(cur&&state.players.includes(cur))?cur:(state.players[i]||state.players[0]);
+  });
+}
+
+// ══ Table ══
+function renderTable(){
+  const catFilter = document.getElementById('filter-cat')?.value||'';
+  const q = (document.getElementById('filter-q')?.value||'').toLowerCase();
+  const ca = document.getElementById('cmp-a')?.value;
+  const cb = document.getElementById('cmp-b')?.value;
+  const showDiff = document.getElementById('chk-diff')?.checked;
+  const showBars = document.getElementById('chk-bars')?.checked;
+  const showPct  = document.getElementById('chk-pct')?.checked;
+
+  let rows = [...RAW_STATS];
+  if(catFilter==='Прочее') rows=rows.filter(r=>!r.cat);
+  else if(catFilter)       rows=rows.filter(r=>r.cat===catFilter);
+  if(q) rows=rows.filter(r=>r.stat.toLowerCase().includes(q));
+
+  const sorted = sortCol
+    ? [...state.players].sort((a,b)=>(getVal(b,sortCol)-getVal(a,sortCol))*sortDir)
+    : state.players;
+
+  // Build header
+  let h=`<thead><tr>
+    <th>Стат</th>
+    <th style="min-width:60px">Тип</th>`;
+  sorted.forEach(p=>{
+    const isCa=p===ca, isCb=p===cb;
+    const gs=calcGS(p).toLocaleString('ru');
+    h+=`<th class="th-player" style="${isCa?'border-bottom:2px solid var(--grn)':isCb?'border-bottom:2px solid var(--blu)':''}">
+      <div>
+        <span class="th-player-name" ondblclick="editPlayerName(event,'${p}')">${state.avatars[p]} ${state.names[p]}</span>
+        <span class="th-del" onclick="confirmDelete('${p}')">✕</span>
+      </div>
+      <div class="th-gs" onclick="setSortBy('${p}')">${gs} ГС</div>
+    </th>`;
+  });
+  h+=`</tr></thead>`;
+
+  // Build body
+  const pinnedRows = rows.filter(r=>state.pinned[r.stat]);
+  const normRows   = rows.filter(r=>!state.pinned[r.stat]);
+
+  let b='<tbody>';
+  if(pinnedRows.length){
+    b+=`<tr><td colspan="${2+sorted.length}" style="background:rgba(201,168,76,.06);font-size:9px;color:rgba(201,168,76,.6);letter-spacing:.15em;text-transform:uppercase;padding:4px 12px">★ Закреплённые</td></tr>`;
+    pinnedRows.forEach(r=>{ b+=buildRow(r,sorted,ca,cb,showBars,showPct,showDiff,true); });
+  }
+  const cats=[...new Set(normRows.map(r=>r.cat||'Прочее'))];
+  cats.forEach(cat=>{
+    const catRows=normRows.filter(r=>(r.cat||'Прочее')===cat);
+    const collapsed=state.collapsed[cat];
+    b+=`<tr class="cat-row${collapsed?' collapsed':''}"><td colspan="${2+sorted.length}" onclick="toggleCat('${cat}')">${cat||'Прочее'}</td></tr>`;
+    if(!collapsed) catRows.forEach(r=>{ b+=buildRow(r,sorted,ca,cb,showBars,showPct,showDiff,false); });
+  });
+  b+='</tbody>';
+
+  document.getElementById('main-table').innerHTML=h+b;
+}
+
+function getVal(p, stat){
+  return state.vals[p] ? (state.vals[p][stat]??null) : null;
+}
+
+function buildRow(row, players, ca, cb, showBars, showPct, showDiff, pinned){
+  const vals = players.map(p=>getVal(p,row.stat));
+  const nums = vals.filter(v=>v!=null);
+  const mx = nums.length ? Math.max(...nums) : null;
+  const mn = nums.length ? Math.min(...nums) : null;
+  const catClass = row.cat==='Урон'?'cat-dmg':row.cat==='Защита'?'cat-def':'cat-other';
+  const star = `<span class="star${state.pinned[row.stat]?' pinned':''}" onclick="togglePin('${row.stat.replace(/'/,"\\'")}')" title="Закрепить">★</span>`;
+
+  let tr=`<tr class="${pinned?'pinned-row':''}">
+    <td class="sn">${star}${row.stat}</td>
+    <td class="sc ${catClass}">${row.cat||'—'}</td>`;
+
+  players.forEach((p,i)=>{
+    const v=vals[i];
+    const va=getVal(ca,row.stat), vb=getVal(cb,row.stat);
+    let cls='vc';
+    if(v!=null&&v===mx&&mx!==mn) cls+=' best';
+    else if(v!=null&&v===mn&&mx!==mn&&nums.length>2) cls+=' worst';
+    if(va!=null&&vb!=null&&v!=null){
+      if(p===ca) cls+=va>vb?' win':va<vb?' lose':' tie';
+      if(p===cb) cls+=vb>va?' win':vb<va?' lose':' tie';
+    }
+    const dispVal = v!=null
+      ? (Math.abs(v)>=10000 ? v.toLocaleString('ru') : parseFloat(v.toFixed(1)))
+      : '<span class="null-val">—</span>';
+    const pctHtml = showPct&&v!=null&&mx!=null&&mx!==mn
+      ? `<span class="pct ${v<mx?'':''}">  ${Math.round(v/mx*100)}%</span>` : '';
+    const barHtml = showBars&&v!=null&&mx!=null&&mx>0
+      ? `<div class="bar" style="width:${Math.round(v/mx*100)}%"></div>` : '';
+    const diffHtml = showDiff&&p===cb&&va!=null&&vb!=null
+      ? `<span class="pct" style="color:${vb>=va?'var(--grn)':'var(--red2)'}">${vb>=va?'+':''}${parseFloat((vb-va).toFixed(1))}</span>` : '';
+    tr+=`<td class="${cls}" ondblclick="startEdit(this,'${p}','${row.stat.replace(/'/,"\\'")}')">${dispVal}${pctHtml}${barHtml}${diffHtml}</td>`;
+  });
+  tr+='</tr>';
+  return tr;
+}
+
+// ══ Inline edit ══
+function startEdit(td, p, stat){
+  if(td.querySelector('.cell-edit')) return;
+  const cur = getVal(p,stat);
+  const inp = document.createElement('input');
+  inp.className='cell-edit'; inp.type='number'; inp.value=cur??''; inp.step='any';
+  const commit=()=>{
+    const v=parseFloat(inp.value);
+    if(!isNaN(v)){
+      if(!state.vals[p]) state.vals[p]={};
+      state.vals[p][stat]=v;
+    } else if(inp.value===''&&cur!=null){
+      delete state.vals[p][stat];
+    }
+    inp.remove(); renderAll(); schedulePush();
+  };
+  inp.onblur=commit;
+  inp.onkeydown=e=>{ if(e.key==='Enter') commit(); if(e.key==='Escape') inp.remove(); };
+  td.appendChild(inp); inp.focus(); inp.select();
+}
+
+// ══ Player name edit ══
+function editPlayerName(e, p){
+  e.stopPropagation();
+  const span=e.target;
+  const inp=document.createElement('input');
+  inp.style.cssText='font-family:var(--fh);font-size:12px;color:var(--tx);background:var(--panel);border:1px solid var(--acc);border-radius:3px;padding:1px 4px;width:80px;outline:none';
+  inp.value=state.names[p]||p;
+  span.style.display='none'; span.parentNode.insertBefore(inp,span);
+  const done=()=>{ state.names[p]=inp.value.trim()||state.names[p]||p; inp.remove(); span.style.display=''; renderAll(); schedulePush(); };
+  inp.onblur=done; inp.onkeydown=e=>{ if(e.key==='Enter') done(); if(e.key==='Escape'){inp.remove();span.style.display='';} }; inp.focus(); inp.select();
+}
+
+// ══ Sort ══
+function setSortBy(p){
+  if(sortCol===p) sortDir*=-1; else { sortCol=p; sortDir=1; }
+  renderTable();
+}
+
+// ══ Cat collapse ══
+function toggleCat(cat){
+  if(state.collapsed[cat]) delete state.collapsed[cat]; else state.collapsed[cat]=1;
+  renderTable();
+}
+
+// ══ Pin ══
+function togglePin(stat){
+  if(state.pinned[stat]) delete state.pinned[stat]; else state.pinned[stat]=1;
+  renderAll(); schedulePush();
+}
+
+// ══ Add player ══
+function openAddPlayer(){
+  document.getElementById('new-player-name').value='';
+  document.getElementById('new-player-av').value='⚔';
+  document.getElementById('av-grid').innerHTML=AVLIST.map(a=>`<span class="av-btn${a==='⚔'?' sel':''}" onclick="selectAv(this,'${a}')">${a}</span>`).join('');
+  document.getElementById('new-player-fields').innerHTML=KEY_STATS.map(s=>`<div class="modal-field"><label>${s}</label><input type="number" data-stat="${s}" step="0.1" placeholder=""></div>`).join('');
+  openModal('add-player-modal');
+}
+function selectAv(el,v){
+  document.querySelectorAll('.av-btn').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel'); document.getElementById('new-player-av').value=v;
+}
+function saveNewPlayer(){
+  const name=document.getElementById('new-player-name').value.trim();
+  if(!name){ alert('Введи имя'); return; }
+  if(state.players.includes(name)){ alert('Игрок уже есть'); return; }
+  state.players.push(name);
+  state.names[name]=name;
+  state.avatars[name]=document.getElementById('new-player-av').value||'⚔';
+  state.vals[name]={};
+  document.querySelectorAll('#new-player-fields input').forEach(inp=>{
+    const v=parseFloat(inp.value);
+    if(!isNaN(v)) state.vals[name][inp.dataset.stat]=v;
+  });
+  closeModal('add-player-modal'); renderAll(); schedulePush();
+}
+
+// ══ Delete player ══
+function confirmDelete(p){
+  document.getElementById('delete-modal-txt').textContent=`Удалить "${state.names[p]||p}"?`;
+  document.getElementById('delete-confirm-btn').onclick=()=>deletePlayer(p);
+  openModal('delete-modal');
+}
+function deletePlayer(p){
+  state.players=state.players.filter(x=>x!==p);
+  delete state.vals[p]; delete state.avatars[p]; delete state.names[p];
+  closeModal('delete-modal'); renderAll(); schedulePush();
+}
+
+// ══ INIT ══
+renderAll();
+</script>
+</body>
+</html>
