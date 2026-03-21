@@ -118,7 +118,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--tx);min-height:100vh
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ── NAV ── */
-.nav{position:relative;z-index:5;height:48px;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--b2);display:flex;align-items:stretch}
+.nav{position:sticky;top:0;z-index:200;height:48px;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--b2);display:flex;align-items:stretch}
 .nav-brand{padding:8px 14px;border-right:1px solid var(--b1);display:flex;align-items:center;flex-shrink:0}
 .logo{font-family:var(--fh);font-size:18px;font-weight:700;letter-spacing:.1em;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .logo-sub{font-size:9px;color:var(--tx3);letter-spacing:.15em;text-transform:uppercase}
@@ -149,7 +149,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--tx);min-height:100vh
 
 /* ── CTRL ── */
 .sticky-top{display:block}
-.ctrl{background:color-mix(in srgb,var(--bg2) 97%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--b1);padding:6px 14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.ctrl{position:sticky;top:var(--ctrl-top,228px);z-index:198;background:color-mix(in srgb,var(--bg2) 97%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--b1);padding:6px 14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .cl{font-size:10px;color:var(--tx3);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
 select,input.si{font-family:var(--fm);font-size:12px;color:var(--tx);background:var(--panel);border:1px solid var(--b2);border-radius:5px;padding:4px 8px;outline:none}
 select:focus,input.si:focus{border-color:var(--acc)}
@@ -168,7 +168,7 @@ input.si{width:150px}
 .pin-badge.hide{opacity:0;pointer-events:none}
 
 /* ── PODIUM ── */
-.pod-wrap{padding:0;display:flex;flex-direction:column;gap:0}
+.pod-wrap{padding:0;display:flex;flex-direction:column;gap:0;position:sticky;top:48px;z-index:197;background:var(--bg)}
 
 /* ── HERO ROW: единый фон, без границ ── */
 .hero-row{
@@ -288,7 +288,7 @@ input.si{width:150px}
 /* ── TABLE ── */
 .tbl-wrap{overflow-x:auto;padding-bottom:60px}
 table{border-collapse:collapse;width:max-content;min-width:100%}
-thead th{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 98%,transparent);border-bottom:1px solid var(--b2);border-right:1px solid var(--b1);padding:8px 10px;font-family:var(--fh);font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--tx2);white-space:nowrap}
+thead th{position:sticky;top:var(--th-top,268px);z-index:10;background:color-mix(in srgb,var(--bg) 98%,transparent);border-bottom:1px solid var(--b2);border-right:1px solid var(--b1);padding:8px 10px;font-family:var(--fh);font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--tx2);white-space:nowrap}
 thead th:first-child{position:sticky;left:0;z-index:20;background:color-mix(in srgb,var(--bg) 99%,transparent);min-width:190px;text-align:left;color:var(--tx)}
 thead th:nth-child(2){position:sticky;left:200px;z-index:20;background:color-mix(in srgb,var(--bg) 99%,transparent);min-width:36px;max-width:36px;width:36px;padding:8px 4px!important;text-align:center;font-size:9px}
 .ph{min-width:120px;text-align:center}
@@ -419,14 +419,14 @@ tr.prow td.sn{border-left:2px solid var(--acc);background:color-mix(in srgb,var(
   .guild-banner{min-height:160px}
   .guild-banner-bg img{height:180px}
   .guild-title{font-size:clamp(24px,8vw,40px)}
-  .ctrl{background:color-mix(in srgb,var(--bg2) 97%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--b1);padding:6px 14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .ctrl{position:sticky;top:var(--ctrl-top,228px);z-index:198;background:color-mix(in srgb,var(--bg2) 97%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--b1);padding:6px 14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
   .ctrl .btn,.ctrl .si,.ctrl select{font-size:10px;padding:4px 6px}
   .sep{display:none}
   #tbl{font-size:10px}
   .sn{max-width:120px;font-size:10px}
-  .tbl-wrap{padding:0 6px 80px}
+  .tbl-wrap{overflow-x:auto;padding-bottom:60px}
   /* Horizontal swipe on table */
-  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tbl-wrap{overflow-x:auto;padding-bottom:60px}
   .nav-right{display:none}
   .gsc{display:none}
   /* Stack podium vertically on very small screens */
@@ -436,26 +436,6 @@ tr.prow td.sn{border-left:2px solid var(--acc);background:color-mix(in srgb,var(
 @media(max-width:420px){
   .guild-banner-bg img{height:140px}
   .pod-em{font-size:32px}
-}
-
-/* ══ FIXED HEADER ══ */
-.fixed-header{
-  position:fixed;
-  top:0;left:0;right:0;
-  z-index:500;
-  background:var(--bg);
-  border-bottom:1px solid var(--b2);
-}
-/* ══ TABLE SCROLL AREA ══ */
-.tbl-wrap{
-  overflow-y:auto;
-  overflow-x:auto;
-  height:calc(100vh - var(--fh-height,300px));
-  padding-bottom:20px;
-}
-/* ══ CONTENT OFFSET ══ */
-#page-table{
-  padding-top:var(--fh-height,300px);
 }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -657,7 +637,6 @@ tr.prow td.sn{border-left:2px solid var(--acc);background:color-mix(in srgb,var(
 </div>
 
 <!-- ═══ NAV ═══ -->
-<div class="fixed-header" id="fixed-header">
 <div class="nav">
   <div class="nav-brand">
     <div><div class="logo">⚔ STATS</div><div class="logo-sub">Gear Score</div></div>
@@ -725,7 +704,6 @@ tr.prow td.sn{border-left:2px solid var(--acc);background:color-mix(in srgb,var(
     <button class="btn" onclick="openAddStat()" style="border-color:rgba(78,143,255,.4);color:var(--blu)">＋ Стат</button>
   </div>
 </div><!-- /sticky-top -->
-</div><!-- /fixed-header -->
   <div style="font-size:10px;color:var(--tx3);padding:2px 14px 4px;font-style:italic">
     ✎ Двойной клик — редактировать · Клик по ГС — сортировка · Клик по категории — свернуть
   </div>
@@ -1267,25 +1245,30 @@ function applyFont(fid){
 // ══════════════════════════════════════════════
 let sortCol=null,sortDir=1,simOff={};
 
-
-
-function updateFHHeight(){
-  var fh=document.getElementById('fixed-header');
-  if(!fh)return;
-  var hh=fh.offsetHeight;
-  document.documentElement.style.setProperty('--fh-height',hh+'px');
+function calcSticky(){
+  var nav=document.querySelector('.nav');
+  var pod=document.querySelector('.pod-wrap');
+  var ctrl=document.querySelector('.ctrl');
+  if(!nav)return;
+  var navH=nav.offsetHeight||48;
+  var podH=pod?pod.offsetHeight:0;
+  var ctrlH=ctrl?ctrl.offsetHeight:0;
+  var ctrlTop=navH+podH;
+  var thTop=ctrlTop+ctrlH;
+  document.documentElement.style.setProperty('--ctrl-top',ctrlTop+'px');
+  document.documentElement.style.setProperty('--th-top',thTop+'px');
 }
-var _fhObs=null;
-function initFHObs(){
-  if(_fhObs)return;
-  var fh=document.getElementById('fixed-header');
-  if(!fh)return;
-  _fhObs=new ResizeObserver(function(){updateFHHeight();});
-  _fhObs.observe(fh);
-  updateFHHeight();
+var _csObs=null;
+function initCalcSticky(){
+  if(_csObs)return;
+  _csObs=new ResizeObserver(function(){calcSticky();});
+  ['.nav','.pod-wrap','.ctrl'].forEach(function(s){
+    var el=document.querySelector(s);if(el)_csObs.observe(el);
+  });
+  calcSticky();
 }
 
-function renderAll(){renderNavRight();renderPodium();renderSelects();render();setTimeout(function(){initFHObs();updateFHHeight();},60);},80);}
+function renderAll(){renderNavRight();renderPodium();renderSelects();render();setTimeout(function(){initCalcSticky();calcSticky();},80);},80);}
 
 function renderPodium(){
   const sorted=[...S.players].sort((a,b)=>gs(b)-gs(a));
