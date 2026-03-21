@@ -148,8 +148,8 @@ body{font-family:var(--fm);background:var(--bg);color:var(--tx);min-height:100vh
 .page.on{display:block}
 
 /* ── CTRL ── */
-.sticky-top{position:sticky;top:48px;z-index:198;background:var(--bg)}
-.ctrl{position:sticky;top:var(--ctrl-top,228px);z-index:198;background:color-mix(in srgb,var(--bg2) 97%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--b1);padding:6px 14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.sticky-top{background:var(--bg)}
+.ctrl{position:sticky;top:48px;z-index:198;background:color-mix(in srgb,var(--bg2) 97%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--b1);padding:6px 14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .cl{font-size:10px;color:var(--tx3);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
 select,input.si{font-family:var(--fm);font-size:12px;color:var(--tx);background:var(--panel);border:1px solid var(--b2);border-radius:5px;padding:4px 8px;outline:none}
 select:focus,input.si:focus{border-color:var(--acc)}
@@ -168,7 +168,7 @@ input.si{width:150px}
 .pin-badge.hide{opacity:0;pointer-events:none}
 
 /* ── PODIUM ── */
-.pod-wrap{padding:0;display:flex;flex-direction:column;gap:0;position:sticky;top:48px;z-index:197;background:var(--bg)}
+.pod-wrap{padding:0;display:flex;flex-direction:column;gap:0;background:var(--bg)}
 
 /* ── HERO ROW: единый фон, без границ ── */
 .hero-row{
@@ -288,7 +288,7 @@ input.si{width:150px}
 /* ── TABLE ── */
 .tbl-wrap{overflow-x:auto;padding-bottom:60px}
 table{border-collapse:collapse;width:max-content;min-width:100%}
-thead th{position:sticky;top:var(--th-top,88px);z-index:10;background:color-mix(in srgb,var(--bg) 98%,transparent);border-bottom:1px solid var(--b2);border-right:1px solid var(--b1);padding:8px 10px;font-family:var(--fh);font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--tx2);white-space:nowrap}
+thead th{position:sticky;top:var(--th-top,92px);z-index:10;background:color-mix(in srgb,var(--bg) 98%,transparent);border-bottom:1px solid var(--b2);border-right:1px solid var(--b1);padding:8px 10px;font-family:var(--fh);font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--tx2);white-space:nowrap}
 thead th:first-child{position:sticky;left:0;z-index:20;background:color-mix(in srgb,var(--bg) 99%,transparent);min-width:190px;text-align:left;color:var(--tx)}
 thead th:nth-child(2){position:sticky;left:200px;z-index:20;background:color-mix(in srgb,var(--bg) 99%,transparent);min-width:36px;max-width:36px;width:36px;padding:8px 4px!important;text-align:center;font-size:9px}
 .ph{min-width:120px;text-align:center}
@@ -704,7 +704,7 @@ tr.prow td.sn{border-left:2px solid var(--acc);background:color-mix(in srgb,var(
     <button class="btn" onclick="openAddStat()" style="border-color:rgba(78,143,255,.4);color:var(--blu)">＋ Стат</button>
   </div>
 </div><!-- /sticky-top -->
-  <div style="font-size:10px;color:var(--tx3);padding:2px 14px 4px;font-style:italic">
+  <div class="tbl-hint" style="font-size:10px;color:var(--tx3);padding:2px 14px 4px;font-style:italic">
     ✎ Двойной клик — редактировать · Клик по ГС — сортировка · Клик по категории — свернуть
   </div>
   <div class="tbl-wrap"><table id="tbl"></table></div>
@@ -1247,41 +1247,25 @@ let sortCol=null,sortDir=1,simOff={};
 
 
 function updateStickyTop(){
-  var st=document.getElementById('sticky-top');
-  if(!st)return;
-  var h=st.offsetHeight;
-  document.documentElement.style.setProperty('--th-top',(48+h)+'px');
+  var nav=document.querySelector('.nav');
+  var ctrl=document.querySelector('.ctrl');
+  var hint=document.querySelector('.tbl-hint');
+  var navH=nav?nav.offsetHeight:48;
+  var ctrlH=ctrl?ctrl.offsetHeight:0;
+  var hintH=hint?hint.offsetHeight:0;
+  document.documentElement.style.setProperty('--th-top',(navH+ctrlH+hintH)+'px');
 }
 var _stickyObs=null;
 function initStickyObs(){
   if(_stickyObs)return;
-  var st=document.getElementById('sticky-top');
-  if(!st)return;
   _stickyObs=new ResizeObserver(function(){updateStickyTop();});
-  _stickyObs.observe(st);
+  var nav=document.querySelector('.nav');
+  var ctrl=document.querySelector('.ctrl');
+  if(nav)_stickyObs.observe(nav);
+  if(ctrl)_stickyObs.observe(ctrl);
   updateStickyTop();
 }
-function calcSticky(){
-  var nav=document.querySelector('.nav');
-  var pod=document.querySelector('.pod-wrap');
-  var ctrl=document.querySelector('.ctrl');
-  var navH=nav?nav.offsetHeight:48;
-  var podH=pod?pod.offsetHeight:0;
-  var ctrlH=ctrl?ctrl.offsetHeight:0;
-  document.documentElement.style.setProperty('--ctrl-top',(navH+podH)+'px');
-  document.documentElement.style.setProperty('--th-top',(navH+podH+ctrlH)+'px');
-}
-var _csObs=null;
-function initCalcSticky(){
-  if(_csObs)return;
-  _csObs=new ResizeObserver(function(){calcSticky();});
-  ['.nav','.pod-wrap','.ctrl'].forEach(function(s){
-    var el=document.querySelector(s);if(el)_csObs.observe(el);
-  });
-  calcSticky();
-}
-
-function renderAll(){renderNavRight();renderPodium();renderSelects();render();setTimeout(()=>{initStickyObs();updateStickyTop();;setTimeout(function(){initCalcSticky();calcSticky();},80);},80);}
+function renderAll(){renderNavRight();renderPodium();renderSelects();render();setTimeout(()=>{initStickyObs();updateStickyTop();},80);}
 
 function renderPodium(){
   const sorted=[...S.players].sort((a,b)=>gs(b)-gs(a));
