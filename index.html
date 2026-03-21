@@ -148,8 +148,8 @@ body{font-family:var(--fm);background:var(--bg);color:var(--tx);min-height:100vh
 .page.on{display:block}
 
 /* ── CTRL ── */
-.sticky-top{position:sticky;top:48px;z-index:198;background:var(--bg)}
-.ctrl{position:relative;z-index:2;background:color-mix(in srgb,var(--bg2) 97%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--b1);padding:6px 14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.sticky-top{position:relative;z-index:198}
+.ctrl{position:sticky;top:var(--ctrl-top,228px);z-index:198;background:color-mix(in srgb,var(--bg2) 97%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--b1);padding:6px 14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .cl{font-size:10px;color:var(--tx3);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
 select,input.si{font-family:var(--fm);font-size:12px;color:var(--tx);background:var(--panel);border:1px solid var(--b2);border-radius:5px;padding:4px 8px;outline:none}
 select:focus,input.si:focus{border-color:var(--acc)}
@@ -168,7 +168,7 @@ input.si{width:150px}
 .pin-badge.hide{opacity:0;pointer-events:none}
 
 /* ── PODIUM ── */
-.pod-wrap{padding:0;display:flex;flex-direction:column;gap:0}
+.pod-wrap{padding:0;display:flex;flex-direction:column;gap:0;position:sticky;top:48px;z-index:197;background:var(--bg)}
 
 /* ── HERO ROW: единый фон, без границ ── */
 .hero-row{
@@ -288,7 +288,7 @@ input.si{width:150px}
 /* ── TABLE ── */
 .tbl-wrap{overflow-x:auto;padding-bottom:60px}
 table{border-collapse:collapse;width:max-content;min-width:100%}
-thead th{position:sticky;top:var(--th-top,88px);z-index:10;background:color-mix(in srgb,var(--bg) 98%,transparent);border-bottom:1px solid var(--b2);border-right:1px solid var(--b1);padding:8px 10px;font-family:var(--fh);font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--tx2);white-space:nowrap}
+thead th{position:sticky;top:var(--th-top,268px);z-index:10;background:color-mix(in srgb,var(--bg) 98%,transparent);border-bottom:1px solid var(--b2);border-right:1px solid var(--b1);padding:8px 10px;font-family:var(--fh);font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--tx2);white-space:nowrap}
 thead th:first-child{position:sticky;left:0;z-index:20;background:color-mix(in srgb,var(--bg) 99%,transparent);min-width:190px;text-align:left;color:var(--tx)}
 thead th:nth-child(2){position:sticky;left:200px;z-index:20;background:color-mix(in srgb,var(--bg) 99%,transparent);min-width:36px;max-width:36px;width:36px;padding:8px 4px!important;text-align:center;font-size:9px}
 .ph{min-width:120px;text-align:center}
@@ -419,7 +419,7 @@ tr.prow td.sn{border-left:2px solid var(--acc);background:color-mix(in srgb,var(
   .guild-banner{min-height:160px}
   .guild-banner-bg img{height:180px}
   .guild-title{font-size:clamp(24px,8vw,40px)}
-  .ctrl{flex-wrap:wrap;gap:4px;padding:6px 8px}
+  .ctrl{position:sticky;top:var(--ctrl-top,228px);z-index:198;background:color-mix(in srgb,var(--bg2) 97%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--b1);padding:6px 14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
   .ctrl .btn,.ctrl .si,.ctrl select{font-size:10px;padding:4px 6px}
   .sep{display:none}
   #tbl{font-size:10px}
@@ -1247,18 +1247,26 @@ let sortCol=null,sortDir=1,simOff={};
 
 
 function updateStickyTop(){
-  var st=document.getElementById('sticky-top');
-  if(!st)return;
-  var h=st.offsetHeight;
-  document.documentElement.style.setProperty('--th-top',(48+h)+'px');
+  var nav=document.querySelector('.nav');
+  var pod=document.querySelector('.pod-wrap');
+  var ctrl=document.querySelector('.ctrl');
+  var navH=nav?nav.offsetHeight:48;
+  var podH=pod?pod.offsetHeight:180;
+  var ctrlH=ctrl?ctrl.offsetHeight:40;
+  var ctrlTop=navH+podH;
+  var thTop=ctrlTop+ctrlH;
+  document.documentElement.style.setProperty('--ctrl-top',ctrlTop+'px');
+  document.documentElement.style.setProperty('--th-top',thTop+'px');
 }
 var _stickyObs=null;
 function initStickyObs(){
   if(_stickyObs)return;
-  var st=document.getElementById('sticky-top');
-  if(!st)return;
+  var targets=['.nav','.pod-wrap','.ctrl'];
   _stickyObs=new ResizeObserver(function(){updateStickyTop();});
-  _stickyObs.observe(st);
+  targets.forEach(function(sel){
+    var el=document.querySelector(sel);
+    if(el)_stickyObs.observe(el);
+  });
   updateStickyTop();
 }
 function renderAll(){renderNavRight();renderPodium();renderSelects();render();setTimeout(()=>{initStickyObs();updateStickyTop();},80);}
