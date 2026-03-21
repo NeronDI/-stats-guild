@@ -148,7 +148,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--tx);min-height:100vh
 .page.on{display:block}
 
 /* ── CTRL ── */
-.sticky-top{display:contents}
+.sticky-top{display:block}
 .ctrl{background:color-mix(in srgb,var(--bg2) 97%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--b1);padding:6px 14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .cl{font-size:10px;color:var(--tx3);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
 select,input.si{font-family:var(--fm);font-size:12px;color:var(--tx);background:var(--panel);border:1px solid var(--b2);border-radius:5px;padding:4px 8px;outline:none}
@@ -437,7 +437,26 @@ tr.prow td.sn{border-left:2px solid var(--acc);background:color-mix(in srgb,var(
   .guild-banner-bg img{height:140px}
   .pod-em{font-size:32px}
 }
-.fixed-header{position:fixed;top:0;left:0;right:0;z-index:500;background:var(--bg)}
+
+/* ══ FIXED HEADER ══ */
+.fixed-header{
+  position:fixed;
+  top:0;left:0;right:0;
+  z-index:500;
+  background:var(--bg);
+  border-bottom:1px solid var(--b2);
+}
+/* ══ TABLE SCROLL AREA ══ */
+.tbl-wrap{
+  overflow-y:auto;
+  overflow-x:auto;
+  height:calc(100vh - var(--fh-height,300px));
+  padding-bottom:20px;
+}
+/* ══ CONTENT OFFSET ══ */
+#page-table{
+  padding-top:var(--fh-height,300px);
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -1249,23 +1268,24 @@ function applyFont(fid){
 let sortCol=null,sortDir=1,simOff={};
 
 
-function updatePagePadding(){
+
+function updateFHHeight(){
   var fh=document.getElementById('fixed-header');
   if(!fh)return;
-  var ph=fh.offsetHeight;
-  var page=document.getElementById('page-table');
-  if(page)page.style.paddingTop=ph+'px';
+  var hh=fh.offsetHeight;
+  document.documentElement.style.setProperty('--fh-height',hh+'px');
 }
-var _hObs=null;
-function initHeaderObs(){
-  if(_hObs)return;
+var _fhObs=null;
+function initFHObs(){
+  if(_fhObs)return;
   var fh=document.getElementById('fixed-header');
   if(!fh)return;
-  _hObs=new ResizeObserver(function(){updatePagePadding();});
-  _hObs.observe(fh);
-  updatePagePadding();
+  _fhObs=new ResizeObserver(function(){updateFHHeight();});
+  _fhObs.observe(fh);
+  updateFHHeight();
 }
-function renderAll(){renderNavRight();renderPodium();renderSelects();render();setTimeout(function(){initHeaderObs();updatePagePadding();},60);},80);}
+
+function renderAll(){renderNavRight();renderPodium();renderSelects();render();setTimeout(function(){initFHObs();updateFHHeight();},60);},80);}
 
 function renderPodium(){
   const sorted=[...S.players].sort((a,b)=>gs(b)-gs(a));
