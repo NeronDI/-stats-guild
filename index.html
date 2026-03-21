@@ -1308,7 +1308,7 @@ function buildRow(row,sorted,ca,cb,doBars,doPct,doDiff,doHeat,avgData,pinRow){
   const isHid=S.hiddenStats&&S.hiddenStats[row.stat];
   if(isHid&&!pinRow)return"";
   const star=`<span class="star${S.pinned[row.stat]?" on":""}" onclick="togglePin('${row.stat.replace(/'/g,"\\'")}')">★</span>`;
-  const catShort=row.cat==="Урон"?"⚔":row.cat==="Защита"?"🛡":"✦";let tr=`<tr${pinRow?' class="prow"':''}><td class="sn" ondblclick="toggleStatVisibility('${row.stat.replace(/'/g,'\\'')}');" title="Двойной клик — скрыть">${star}${row.stat}</td><td class="sc ${catCls}">${catShort}</td>`;
+  const catShort=row.cat==="Урон"?"⚔":row.cat==="Защита"?"🛡":"✦";const safeStatHide=row.stat.replace(/'/g,"\\'");let tr=`<tr${pinRow?' class="prow"':''}><td class="sn" ondblclick="toggleStatVisibility('${safeStatHide}');" title="Двойной клик — скрыть">${star}${row.stat}</td><td class="sc ${catCls}">${catShort}</td>`;
   sorted.forEach((p,i)=>{
     const v=vals[i];
     const va=gv(ca,row.stat),vb=gv(cb,row.stat);
@@ -1525,7 +1525,9 @@ function renderHistInSettings(){
   const hsl=document.getElementById('hidden-stats-list');
   if(hsl){
     const hidden=Object.keys(S.hiddenStats||{}).filter(k=>S.hiddenStats[k]);
-    hsl.innerHTML=hidden.length?hidden.map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid var(--b1)"><span style="font-size:11px">${s}</span><button class="btn" onclick="delete S.hiddenStats['${s}'];render();schedulePush();renderSettings()" style="font-size:9px;padding:2px 6px">Показать</button></div>`).join(''):'<div style="font-size:11px;color:var(--tx3)">Всё отображается</div>';
+    hsl.innerHTML=hidden.length?hidden.map(function(s){
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid var(--b1)"><span style="font-size:11px">'+s+'</span><button class="btn" onclick="delete S.hiddenStats[\''+s+'\'];render();schedulePush();renderSettings()" style="font-size:9px;padding:2px 6px">Показать</button></div>';
+    }).join(''):'<div style="font-size:11px;color:var(--tx3)">Всё отображается</div>';
   }
   const el=document.getElementById("hist-wrap");if(!el)return;
   if(!S.hist||!S.hist.length){el.innerHTML='<div style="font-size:11px;color:var(--tx3);padding:4px">История пуста</div>';return;}
@@ -1830,52 +1832,54 @@ function openGsHistory(){
   recordGsSnapshot();
   const modal=document.getElementById('ov-gshistory');
   if(!modal)return;
-  // Build chart HTML
   const players=S.players;
-  let html='<div style="display:flex;flex-direction:column;gap:12px">';
-  players.forEach(p=>{
+  let out='<div style="display:flex;flex-direction:column;gap:14px">';
+  players.forEach(function(p){
     const arr=(S.gsHistory||{})[p]||[];
     if(!arr.length)return;
-    const max=Math.max(...arr.map(x=>x.v));
-    const min=Math.min(...arr.map(x=>x.v));
-    const range=max-min||1;
+    const maxV=Math.max.apply(null,arr.map(function(x){return x.v;}));
+    const minV=Math.min.apply(null,arr.map(function(x){return x.v;}));
+    const range=maxV-minV||1;
     const W=300,H=60;
-    const pts=arr.map((x,i)=>{
+    const pts=arr.map(function(x,i){
       const cx=arr.length>1?Math.round(i/(arr.length-1)*W):W/2;
-      const cy=H-Math.round((x.v-min)/range*(H-8))-4;
-      return `${cx},${cy}`;
+      const cy=H-Math.round((x.v-minV)/range*(H-8))-4;
+      return cx+','+cy;
     }).join(' ');
     const latest=arr[arr.length-1].v;
     const delta=arr.length>1?latest-arr[0].v:0;
     const dCol=delta>=0?'var(--grn2)':'var(--red2)';
-    html+=`<div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-        <span style="font-size:12px;font-weight:700">${S.names[p]||p}</span>
-        <span style="font-size:11px;color:${dCol}">${delta>=0?'+':''}${delta.toLocaleString('ru')} ГС</span>
-      </div>
-      <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="overflow:visible;display:block;max-width:100%">
-        <defs><linearGradient id="grd${p}" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="var(--acc)" stop-opacity=".3"/>
-          <stop offset="100%" stop-color="var(--acc)" stop-opacity="0"/>
-        </linearGradient></defs>
-        <polyline points="${pts}" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round"/>
-        ${arr.length>1?`<polygon points="${pts} ${W},${H} 0,${H}" fill="url(#grd${p})"/>`:''}
-        ${arr.map((x,i)=>{
-          const cx=arr.length>1?Math.round(i/(arr.length-1)*W):W/2;
-          const cy=H-Math.round((x.v-min)/range*(H-8))-4;
-          return `<circle cx="${cx}" cy="${cy}" r="3" fill="var(--acc)"/>`;
-        }).join('')}
-      </svg>
-      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--tx3);margin-top:2px">
-        <span>${new Date(arr[0].t).toLocaleDateString('ru')}</span>
-        <span>${latest.toLocaleString('ru')} ГС</span>
-        <span>${arr.length>1?new Date(arr[arr.length-1].t).toLocaleDateString('ru'):''}</span>
-      </div>
-    </div>`;
+    const dSign=delta>=0?'+':'';
+    let circles='';
+    arr.forEach(function(x,i){
+      const cx=arr.length>1?Math.round(i/(arr.length-1)*W):W/2;
+      const cy=H-Math.round((x.v-minV)/range*(H-8))-4;
+      circles+='<circle cx="'+cx+'" cy="'+cy+'" r="3" fill="var(--acc)"/>';
+    });
+    const polygon=arr.length>1?'<polygon points="'+pts+' '+W+','+H+' 0,'+H+'" fill="url(#grd'+p+')"/>':'';
+    out+='<div>';
+    out+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">';
+    out+='<span style="font-size:12px;font-weight:700">'+(S.names[p]||p)+'</span>';
+    out+='<span style="font-size:11px;color:'+dCol+'">'+dSign+delta.toLocaleString('ru')+' ГС</span>';
+    out+='</div>';
+    out+='<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" style="overflow:visible;display:block;max-width:100%">';
+    out+='<defs><linearGradient id="grd'+p+'" x1="0" y1="0" x2="0" y2="1">';
+    out+='<stop offset="0%" stop-color="var(--acc)" stop-opacity=".3"/>';
+    out+='<stop offset="100%" stop-color="var(--acc)" stop-opacity="0"/>';
+    out+='</linearGradient></defs>';
+    out+='<polyline points="'+pts+'" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round"/>';
+    out+=polygon;
+    out+=circles;
+    out+='</svg>';
+    out+='<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--tx3);margin-top:2px">';
+    out+='<span>'+new Date(arr[0].t).toLocaleDateString('ru')+'</span>';
+    out+='<span>'+latest.toLocaleString('ru')+' ГС</span>';
+    out+='<span>'+(arr.length>1?new Date(arr[arr.length-1].t).toLocaleDateString('ru'):'')+'</span>';
+    out+='</div></div>';
   });
-  html+='</div>';
+  out+='</div>';
   const content=modal.querySelector('#gshistory-content');
-  if(content)content.innerHTML=html;
+  if(content)content.innerHTML=out;
   openOv('ov-gshistory');
 }
 
