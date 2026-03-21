@@ -148,7 +148,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--tx);min-height:100vh
 .page.on{display:block}
 
 /* ── CTRL ── */
-.ctrl{position:sticky;top:48px;z-index:199;background:color-mix(in srgb,var(--bg2) 94%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--b1);padding:6px 14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.ctrl{position:relative;z-index:5;background:color-mix(in srgb,var(--bg2) 94%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--b1);padding:6px 14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .cl{font-size:10px;color:var(--tx3);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
 select,input.si{font-family:var(--fm);font-size:12px;color:var(--tx);background:var(--panel);border:1px solid var(--b2);border-radius:5px;padding:4px 8px;outline:none}
 select:focus,input.si:focus{border-color:var(--acc)}
@@ -167,7 +167,7 @@ input.si{width:150px}
 .pin-badge.hide{opacity:0;pointer-events:none}
 
 /* ── PODIUM ── */
-.pod-wrap{padding:0;display:flex;flex-direction:column;gap:0}
+.sticky-header{position:sticky;top:48px;z-index:198;}.pod-wrap{padding:0;display:flex;flex-direction:column;gap:0}
 
 /* ── HERO ROW: единый фон, без границ ── */
 .hero-row{
@@ -653,6 +653,10 @@ tr.prow td.sn{border-left:2px solid var(--acc);background:color-mix(in srgb,var(
       <option value="">Все</option>
       <option value="Урон">Урон</option>
       <option value="Защита">Защита</option>
+      <option value="PVP">PVP</option>
+      <option value="PVE">PVE</option>
+      <option value="Стихии">Стихии</option>
+      <option value="Душа">Душа</option>
       <option value="Прочее">Прочее</option>
     </select>
     <input class="si" id="f-q" placeholder="🔍 Поиск стата..." oninput="render()">
@@ -676,7 +680,7 @@ tr.prow td.sn{border-left:2px solid var(--acc);background:color-mix(in srgb,var(
     <button class="btn btn-add" onclick="openAdd()">＋ Игрок</button>
     <button class="btn" onclick="openAddStat()" style="border-color:rgba(78,143,255,.4);color:var(--blu)">＋ Стат</button>
   </div>
-  <div class="pod-wrap">
+  <div class="sticky-header"><div class="pod-wrap">
     <div class="hero-row">
       <div class="guild-banner">
         <div class="guild-banner-bg">
@@ -1010,11 +1014,11 @@ const AVLIST=[
 const KEYSTATS=["Маг урон","Маг точность","Маг Крит Атк","Урон ближн.","Точность ближн.","Крит ближн.","Урон дальн.","Точность дальн.","Защита","Снижение урона ближн.","Снижение маг урона","Блокировка оружия","Макс НР","Макс МР","Скор. Атк","Шанс двойного урона","Шанс тройного урона","Увел. урона от оружия","Увел. урона от умений","Сопр. умениям","Накопл. энергии"];
 const RADCAT=[
   {l:"Маг урон",s:["Маг урон","Маг точность","Маг Крит Атк"]},
-  {l:"Физ ближн",s:["Урон ближн.","Точность ближн.","Крит ближн."]},
-  {l:"Дальн бой",s:["Урон дальн.","Точность дальн.","Крит дальн."]},
-  {l:"PVP",s:["Урон PVP ближн","Маг урон PVP","Крит атк PVP"]},
-  {l:"Защита",s:["Защита","Снижение урона ближн.","Снижение маг урона"]},
-  {l:"Живуч.",s:["Сопр. оглушению","Сопр. двойному урону","Сопр. удержанию"]},
+  {l:"Физ ближн",s:["Урон ближн.","Точность ближн.","Крит ближн.","Урон в ближ. бою","Точность в ближ. бою","Крит атак в ближ. бою"]},
+  {l:"Дальн бой",s:["Урон дальн.","Точность дальн.","Крит дальн.","Урон в дальн бою","Точность в дальн бою","Крит атак в дальн бою"]},
+  {l:"PVP",s:["Урон PVP ближн","Маг урон PVP","Крит атк PVP","Дрп урон в ближ бою в PVP","Доп маг урон в PVP","Крит атк в PVP"]},
+  {l:"Защита",s:["Защита","Снижение урона ближн.","Снижение маг урона","Снижения урона в ближ. бою","Снижения маг урона"]},
+  {l:"Живуч.",s:["Сопр. оглушению","Сопротивление оглушению","Сопр. двойному урону","Сопротивление двойному урону","Сопр. удержанию","Сопротивление удержанию"]},
   {l:"HP/MP",s:["Макс НР","Макс МР"]}
 ];
 
@@ -1051,10 +1055,11 @@ function encO(o){if(!o||typeof o!=="object"||Array.isArray(o))return o;const r={
 function decO(o){if(!o||typeof o!=="object"||Array.isArray(o))return o;const r={};Object.keys(o).forEach(k=>{const v=o[k];r[fkd(k)]=v&&typeof v==="object"&&!Array.isArray(v)?decO(v):v;});return r;}
 
 function encState(){
-  return{v:9,ts:Date.now(),uid:ME?ME.uid:"",by:ME?ME.displayName:"?",
+  return{v:10,ts:Date.now(),uid:ME?ME.uid:"",by:ME?ME.displayName:"?",
     players:S.players.map(fke),vals:encO(S.vals),avatars:encO(S.avatars),
     names:encO(S.names),gw:encO(S.gw),pinned:encO(S.pinned),
-    hist:(S.hist||[]).slice(-80)};
+    hist:(S.hist||[]).slice(-80),
+    theme:S.theme||"",font:S.font||"rajdhani"};
 }
 function decState(d){
   if(!d||!d.v)return;
@@ -1065,11 +1070,16 @@ function decState(d){
   S.gw=Object.assign({},GW0,decO(d.gw||{}));
   S.pinned=decO(d.pinned||{});
   S.hist=d.hist||[];
+  if(d.theme!==undefined)S.theme=d.theme;
+  if(d.font)S.font=d.font;
   S.players.forEach(p=>{
     if(!S.avatars[p])S.avatars[p]="⚔";
     if(!S.names[p])S.names[p]=p;
     if(!S.vals[p])S.vals[p]={};
   });
+  // apply theme/font immediately when data arrives
+  applyThemeClass(S.theme||"");
+  applyFontVar(S.font||"rajdhani");
 }
 
 // ══════════════════════════════════════════════
@@ -1218,14 +1228,24 @@ function showPage(name,el){
 // ══════════════════════════════════════════════
 //  THEME / FONT
 // ══════════════════════════════════════════════
+function applyThemeClass(id){
+  // Apply without push (used internally after decState)
+  const cls=id||"";
+  const keep=[...document.body.classList].filter(c=>!THEMES.map(t=>t.id).includes(c));
+  document.body.className=[...keep,cls].filter(Boolean).join(" ");
+}
+function applyFontVar(fid){
+  const f=FONTS.find(x=>x.id===fid);
+  if(f)document.body.style.setProperty("--fh",f.css);
+}
 function applyTheme(id){
-  S.theme=id;document.body.className=id;
+  S.theme=id;
+  applyThemeClass(id);
   schedulePush();
 }
 function applyFont(fid){
   S.font=fid;
-  const f=FONTS.find(x=>x.id===fid);
-  if(f)document.body.style.setProperty("--fh",f.css);
+  applyFontVar(fid);
   schedulePush();
 }
 
@@ -1301,7 +1321,7 @@ function render(){
     h+=`<th class="ph${isCa?" cma":isCb?" cmb":""}">
       <div style="display:flex;align-items:center;gap:4px">
         <span class="av-ico" onclick="openAvChange('${p}')" title="Сменить иконку" style="font-size:16px;cursor:pointer;padding:1px 3px;border-radius:4px;border:1px solid transparent;transition:all .15s" onmouseenter="this.style.borderColor='var(--acc)'" onmouseleave="this.style.borderColor='transparent'">${S.avatars[p]||"⚔"}</span>
-        <span class="ph-nm" ondblclick="editName(event,'${p}')">${S.names[p]||p}</span>
+        <span class="ph-av" onclick="openAvatarPick('${p}')" title="Сменить иконку" style="cursor:pointer;font-size:14px;display:inline-block;transition:transform .15s" onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform=''">${S.avatars[p]||'⚔'}</span><span class="ph-nm" ondblclick="editName(event,'${p}')" style="margin-left:3px">${S.names[p]||p}</span>
         <span class="ph-x" onclick="confirmDel('${p}')">✕</span>
       </div>
       <div class="ph-gs" onclick="setSortBy('${p}')">${gs(p).toLocaleString("ru")} ГС</div>
@@ -1430,6 +1450,50 @@ function togglePin(stat){if(S.pinned[stat])delete S.pinned[stat];else S.pinned[s
 // ══════════════════════════════════════════════
 //  ADD PLAYER
 // ══════════════════════════════════════════════
+
+// ══ Avatar picker for existing players ══
+function openAvatarPick(p){
+  // create inline tooltip picker
+  const existing = document.getElementById('av-pick-popup');
+  if(existing) existing.remove();
+  const popup = document.createElement('div');
+  popup.id = 'av-pick-popup';
+  popup.style.cssText = 'position:fixed;z-index:9999;background:var(--panel);border:1px solid var(--b2);border-radius:10px;padding:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:6px;min-width:220px';
+  const title = document.createElement('div');
+  title.style.cssText = 'font-family:var(--fh);font-size:11px;color:var(--tx2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px';
+  title.textContent = 'Иконка: ' + (S.names[p]||p);
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px';
+  AVLIST.forEach(av=>{
+    const btn = document.createElement('span');
+    btn.textContent = av;
+    btn.title = av;
+    btn.style.cssText = 'font-size:20px;cursor:pointer;padding:4px 6px;border-radius:6px;border:1px solid '+(S.avatars[p]===av?'var(--acc)':'transparent')+';background:'+(S.avatars[p]===av?'color-mix(in srgb,var(--acc) 15%,transparent)':'transparent')+';transition:all .12s';
+    btn.onmouseover = ()=>btn.style.background='color-mix(in srgb,var(--acc) 12%,transparent)';
+    btn.onmouseout  = ()=>btn.style.background=(S.avatars[p]===av?'color-mix(in srgb,var(--acc) 15%,transparent)':'transparent');
+    btn.onclick = ()=>{
+      S.avatars[p] = av;
+      popup.remove();
+      renderAll(); schedulePush();
+    };
+    grid.appendChild(btn);
+  });
+  popup.appendChild(title);
+  popup.appendChild(grid);
+  document.body.appendChild(popup);
+  // position near cursor
+  const x = Math.min(event.clientX - 10, window.innerWidth - 250);
+  const y = Math.min(event.clientY + 10, window.innerHeight - 200);
+  popup.style.left = x + 'px';
+  popup.style.top  = y + 'px';
+  // close on outside click
+  setTimeout(()=>{
+    document.addEventListener('click', function handler(e){
+      if(!popup.contains(e.target)){ popup.remove(); document.removeEventListener('click',handler); }
+    });
+  }, 10);
+}
+
 function openAdd(){
   document.getElementById("an").value="";
   document.getElementById("aav").value="⚔";
